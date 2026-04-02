@@ -63,13 +63,15 @@ function App() {
         const duration = Math.abs(route.travel_times_from_start[destIdx] - route.travel_times_from_start[originIdx]);
         const directionKey = isReverse ? route.direction_reverse : route.direction;
         
-        // NOVA LÓGICA RIGOROSA: Sem Fallback. Ou há dados no JSON extraído do PDF, ou dá erro.
-        if (!route.departures[origin] || !route.departures[origin][dayType] || route.departures[origin][dayType].length === 0) {
-             setError(`⚠️ Não temos horários oficiais registados na base de dados para partidas da estação ${origin} na Linha ${route.line}. Por favor, atualiza o sistema com o PDF correspondente.`);
+        // Vai buscar à base de dados correta consoante a direção (Ida ou Volta)
+        const targetDepartures = isReverse ? route.departures_reverse : route.departures;
+
+        if (!targetDepartures[origin] || !targetDepartures[origin][dayType] || targetDepartures[origin][dayType].length === 0) {
+             setError(`⚠️ Não temos horários oficiais registados na base de dados para o sentido ${directionKey} a partir de ${origin}.`);
              return;
         }
 
-        const departures = route.departures[origin][dayType];
+        const departures = targetDepartures[origin][dayType];
         let nextTrain = null;
 
         for (const dep of departures) {
@@ -102,7 +104,7 @@ function App() {
       }
     }
 
-    if (!routeFound) setError("Ligação direta não encontrada.");
+    if (!routeFound) setError("Ligação direta não encontrada na base de dados atual.");
   };
 
   const favoriteStations = stations.filter(s => favorites.includes(s)).sort();
@@ -153,7 +155,6 @@ function App() {
             <div className="absolute -top-3 right-4">
                <span className="bg-green-100 text-green-800 text-xs font-bold px-3 py-1 rounded-full border border-green-300 shadow-sm">✅ Horário Oficial</span>
             </div>
-
             <div className="flex justify-between items-center border-b border-blue-200 pb-3 mb-3 mt-2">
               <h3 className="font-bold text-blue-800 text-lg">Linha {result.line}</h3>
               <span className="text-xs bg-blue-200 text-blue-800 px-2 py-1 rounded-full font-semibold uppercase">Sentido {result.direction}</span>
