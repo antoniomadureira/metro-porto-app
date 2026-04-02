@@ -22,10 +22,69 @@
         "Matosinhos Sul",
         "Brito Capelo",
         "Mercado",
-        "Senhor de Matosinhos"
+        "Senhor de Matosinhos",
+        "Fonte do Cuco",
+        "Custoias",
+        "Esposade",
+        "Crestins",
+        "Verdes",
+        "Pedras Rubras",
+        "Lidador",
+        "Vilar de Pinheiro",
+        "Modivas Sul",
+        "Modivas Centro",
+        "Modivas Norte",
+        "Mindelo",
+        "Espaço Natureza",
+        "Varziela",
+        "Árvore",
+        "Azurara",
+        "Santa Clara",
+        "Vila do Conde",
+        "Alto de Pega",
+        "Portas Fronhas",
+        "São Brás",
+        "Póvoa de Varzim",
+        "Araújo",
+        "Pias",
+        "Mandim",
+        "Castêlo da Maia",
+        "ISMAI",
+        "Botica",
+        "Aeroporto",
+        "Hospital São João",
+        "IPO",
+        "Pólo Universitário",
+        "Salgueiros",
+        "Combatentes",
+        "Marquês",
+        "Faria Guimarães",
+        "Aliados",
+        "São Bento",
+        "Jardim do Morro",
+        "General Torres",
+        "Câmara de Gaia",
+        "João de Deus",
+        "D. João II",
+        "Santo Ovídio",
+        "Fânzeres",
+        "Venda Nova",
+        "Carreira",
+        "Baguim",
+        "Campainha",
+        "Rio Tinto",
+        "Levada",
+        "Nau Vitória",
+        "Nasoni",
+        "Contumil"
     ],
     "lines": [
-        "A"
+        "A",
+        "B",
+        "C",
+        "D",
+        "E",
+        "F"
     ],
     "routes": [
         {
@@ -24322,6 +24381,727 @@
                         "23:49",
                         "23:58"
                     ]
+                }
+            }
+        },
+        {
+            "line": "B",
+            "direction": "Póvoa de Varzim",
+            "direction_reverse": "Estádio do Dragão",
+            "stations_sequence": [
+                "Estádio do Dragão",
+                "Campanhã",
+                "Heroísmo",
+                "Campo 24 de Agosto",
+                "Bolhão",
+                "Trindade",
+                "Lapa",
+                "Carolina Michaelis",
+                "Casa da Música",
+                "Francos",
+                "Ramalde",
+                "Viso",
+                "Sete Bicas",
+                "Senhora da Hora",
+                "Fonte do Cuco",
+                "Custoias",
+                "Esposade",
+                "Crestins",
+                "Verdes",
+                "Pedras Rubras",
+                "Lidador",
+                "Vilar de Pinheiro",
+                "Modivas Sul",
+                "Modivas Centro",
+                "Modivas Norte",
+                "Mindelo",
+                "Espaço Natureza",
+                "Varziela",
+                "Árvore",
+                "Azurara",
+                "Santa Clara",
+                "Vila do Conde",
+                "Alto de Pega",
+                "Portas Fronhas",
+                "São Brás",
+                "Póvoa de Varzim"
+            ],
+            "travel_times_from_start": [
+                0,
+                2,
+                4,
+                5,
+                7,
+                9,
+                11,
+                12,
+                14,
+                16,
+                17,
+                19,
+                21,
+                23,
+                25,
+                26,
+                29,
+                31,
+                33,
+                35,
+                37,
+                39,
+                41,
+                42,
+                44,
+                46,
+                48,
+                49,
+                51,
+                52,
+                54,
+                55,
+                57,
+                58,
+                60,
+                62
+            ],
+            "departures": {
+                "Estádio do Dragão": {
+                    "weekdays": [],
+                    "weekends": []
+                },
+                "Campanhã": {
+                    "weekdays": [],
+                    "weekends": []
+                },
+                "Heroísmo": {
+                    "weekdays": [],
+                    "weekends": []
+                },
+                "Campo 24 de Agosto": {
+                    "weekdays": [],
+                    "weekends": []
+                },
+                "Bolhão": {
+                    "weekdays": [],
+                    "weekends": []
+                },
+                "Trindade": {
+                    "weekdays": [],
+                    "weekends": []
+                },
+                "Lapa": {
+                    "weekdays": [],
+                    "weekends": []
+                },
+                "Carolina Michaelis": {
+                    "weekdays": [],
+                    "weekends": []
+                },
+                "Casa da Música": {
+                    "weekdays": [],
+                    "weekends": []
+                },
+                "Francos": {
+                    "weekdays": [],
+                    "weekends": []
+                },
+                "Ramalde": {
+                    "weekdays": [],
+                    "weekends": []
+                },
+                "Viso": {
+                    "weekdays": [],
+                    "weekends": []
+                },
+                "Sete Bicas": {
+                    "weekdays": [],
+                    "weekends": []
+                },
+                "Senhora da Hora": {
+                    "weekdays": [],
+                    "weekends": []
+                },
+                "Fonte do Cuco": {
+                    "weekdays": [],
+                    "weekends": []
+                },
+                "Custoias": {
+                    "weekdays": [],
+                    "weekends": []
+                },
+                "Esposade": {
+                    "weekdays": [],
+                    "weekends": []
+                },
+                "Crestins": {
+                    "weekdays": [],
+                    "weekends": []
+                },
+                "Verdes": {
+                    "weekdays": [],
+                    "weekends": []
+                },
+                "Pedras Rubras": {
+                    "weekdays": [],
+                    "weekends": []
+                },
+                "Lidador": {
+                    "weekdays": [],
+                    "weekends": []
+                },
+                "Vilar de Pinheiro": {
+                    "weekdays": [],
+                    "weekends": []
+                },
+                "Modivas Sul": {
+                    "weekdays": [],
+                    "weekends": []
+                },
+                "Modivas Centro": {
+                    "weekdays": [],
+                    "weekends": []
+                },
+                "Modivas Norte": {
+                    "weekdays": [],
+                    "weekends": []
+                },
+                "Mindelo": {
+                    "weekdays": [],
+                    "weekends": []
+                },
+                "Espaço Natureza": {
+                    "weekdays": [],
+                    "weekends": []
+                },
+                "Varziela": {
+                    "weekdays": [],
+                    "weekends": []
+                },
+                "Árvore": {
+                    "weekdays": [],
+                    "weekends": []
+                },
+                "Azurara": {
+                    "weekdays": [],
+                    "weekends": []
+                },
+                "Santa Clara": {
+                    "weekdays": [],
+                    "weekends": []
+                },
+                "Vila do Conde": {
+                    "weekdays": [],
+                    "weekends": []
+                },
+                "Alto de Pega": {
+                    "weekdays": [],
+                    "weekends": []
+                },
+                "Portas Fronhas": {
+                    "weekdays": [],
+                    "weekends": []
+                },
+                "São Brás": {
+                    "weekdays": [],
+                    "weekends": []
+                },
+                "Póvoa de Varzim": {
+                    "weekdays": [],
+                    "weekends": []
+                }
+            }
+        },
+        {
+            "line": "C",
+            "direction": "ISMAI",
+            "direction_reverse": "Campanhã",
+            "stations_sequence": [
+                "Campanhã",
+                "Heroísmo",
+                "Campo 24 de Agosto",
+                "Bolhão",
+                "Trindade",
+                "Lapa",
+                "Carolina Michaelis",
+                "Casa da Música",
+                "Francos",
+                "Ramalde",
+                "Viso",
+                "Sete Bicas",
+                "Senhora da Hora",
+                "Fonte do Cuco",
+                "Custoias",
+                "Araújo",
+                "Pias",
+                "Mandim",
+                "Castêlo da Maia",
+                "ISMAI"
+            ],
+            "travel_times_from_start": [
+                0,
+                2,
+                3,
+                5,
+                7,
+                9,
+                10,
+                12,
+                14,
+                15,
+                17,
+                19,
+                21,
+                23,
+                24,
+                26,
+                28,
+                30,
+                32,
+                34
+            ],
+            "departures": {
+                "Campanhã": {
+                    "weekdays": [],
+                    "weekends": []
+                },
+                "Heroísmo": {
+                    "weekdays": [],
+                    "weekends": []
+                },
+                "Campo 24 de Agosto": {
+                    "weekdays": [],
+                    "weekends": []
+                },
+                "Bolhão": {
+                    "weekdays": [],
+                    "weekends": []
+                },
+                "Trindade": {
+                    "weekdays": [],
+                    "weekends": []
+                },
+                "Lapa": {
+                    "weekdays": [],
+                    "weekends": []
+                },
+                "Carolina Michaelis": {
+                    "weekdays": [],
+                    "weekends": []
+                },
+                "Casa da Música": {
+                    "weekdays": [],
+                    "weekends": []
+                },
+                "Francos": {
+                    "weekdays": [],
+                    "weekends": []
+                },
+                "Ramalde": {
+                    "weekdays": [],
+                    "weekends": []
+                },
+                "Viso": {
+                    "weekdays": [],
+                    "weekends": []
+                },
+                "Sete Bicas": {
+                    "weekdays": [],
+                    "weekends": []
+                },
+                "Senhora da Hora": {
+                    "weekdays": [],
+                    "weekends": []
+                },
+                "Fonte do Cuco": {
+                    "weekdays": [],
+                    "weekends": []
+                },
+                "Custoias": {
+                    "weekdays": [],
+                    "weekends": []
+                },
+                "Araújo": {
+                    "weekdays": [],
+                    "weekends": []
+                },
+                "Pias": {
+                    "weekdays": [],
+                    "weekends": []
+                },
+                "Mandim": {
+                    "weekdays": [],
+                    "weekends": []
+                },
+                "Castêlo da Maia": {
+                    "weekdays": [],
+                    "weekends": []
+                },
+                "ISMAI": {
+                    "weekdays": [],
+                    "weekends": []
+                }
+            }
+        },
+        {
+            "line": "D",
+            "direction": "Santo Ovídio",
+            "direction_reverse": "Hospital São João",
+            "stations_sequence": [
+                "Hospital São João",
+                "IPO",
+                "Pólo Universitário",
+                "Salgueiros",
+                "Combatentes",
+                "Marquês",
+                "Faria Guimarães",
+                "Trindade",
+                "Aliados",
+                "São Bento",
+                "Jardim do Morro",
+                "General Torres",
+                "Câmara de Gaia",
+                "João de Deus",
+                "D. João II",
+                "Santo Ovídio"
+            ],
+            "travel_times_from_start": [
+                0,
+                2,
+                4,
+                6,
+                7,
+                9,
+                11,
+                13,
+                14,
+                16,
+                19,
+                21,
+                23,
+                24,
+                26,
+                28
+            ],
+            "departures": {
+                "Hospital São João": {
+                    "weekdays": [],
+                    "weekends": []
+                },
+                "IPO": {
+                    "weekdays": [],
+                    "weekends": []
+                },
+                "Pólo Universitário": {
+                    "weekdays": [],
+                    "weekends": []
+                },
+                "Salgueiros": {
+                    "weekdays": [],
+                    "weekends": []
+                },
+                "Combatentes": {
+                    "weekdays": [],
+                    "weekends": []
+                },
+                "Marquês": {
+                    "weekdays": [],
+                    "weekends": []
+                },
+                "Faria Guimarães": {
+                    "weekdays": [],
+                    "weekends": []
+                },
+                "Trindade": {
+                    "weekdays": [],
+                    "weekends": []
+                },
+                "Aliados": {
+                    "weekdays": [],
+                    "weekends": []
+                },
+                "São Bento": {
+                    "weekdays": [],
+                    "weekends": []
+                },
+                "Jardim do Morro": {
+                    "weekdays": [],
+                    "weekends": []
+                },
+                "General Torres": {
+                    "weekdays": [],
+                    "weekends": []
+                },
+                "Câmara de Gaia": {
+                    "weekdays": [],
+                    "weekends": []
+                },
+                "João de Deus": {
+                    "weekdays": [],
+                    "weekends": []
+                },
+                "D. João II": {
+                    "weekdays": [],
+                    "weekends": []
+                },
+                "Santo Ovídio": {
+                    "weekdays": [],
+                    "weekends": []
+                }
+            }
+        },
+        {
+            "line": "E",
+            "direction": "Aeroporto",
+            "direction_reverse": "Trindade",
+            "stations_sequence": [
+                "Trindade",
+                "Lapa",
+                "Carolina Michaelis",
+                "Casa da Música",
+                "Francos",
+                "Ramalde",
+                "Viso",
+                "Sete Bicas",
+                "Senhora da Hora",
+                "Fonte do Cuco",
+                "Custoias",
+                "Esposade",
+                "Crestins",
+                "Verdes",
+                "Botica",
+                "Aeroporto"
+            ],
+            "travel_times_from_start": [
+                0,
+                2,
+                3,
+                5,
+                7,
+                8,
+                10,
+                12,
+                14,
+                16,
+                17,
+                20,
+                22,
+                24,
+                26,
+                28
+            ],
+            "departures": {
+                "Trindade": {
+                    "weekdays": [],
+                    "weekends": []
+                },
+                "Lapa": {
+                    "weekdays": [],
+                    "weekends": []
+                },
+                "Carolina Michaelis": {
+                    "weekdays": [],
+                    "weekends": []
+                },
+                "Casa da Música": {
+                    "weekdays": [],
+                    "weekends": []
+                },
+                "Francos": {
+                    "weekdays": [],
+                    "weekends": []
+                },
+                "Ramalde": {
+                    "weekdays": [],
+                    "weekends": []
+                },
+                "Viso": {
+                    "weekdays": [],
+                    "weekends": []
+                },
+                "Sete Bicas": {
+                    "weekdays": [],
+                    "weekends": []
+                },
+                "Senhora da Hora": {
+                    "weekdays": [],
+                    "weekends": []
+                },
+                "Fonte do Cuco": {
+                    "weekdays": [],
+                    "weekends": []
+                },
+                "Custoias": {
+                    "weekdays": [],
+                    "weekends": []
+                },
+                "Esposade": {
+                    "weekdays": [],
+                    "weekends": []
+                },
+                "Crestins": {
+                    "weekdays": [],
+                    "weekends": []
+                },
+                "Verdes": {
+                    "weekdays": [],
+                    "weekends": []
+                },
+                "Botica": {
+                    "weekdays": [],
+                    "weekends": []
+                },
+                "Aeroporto": {
+                    "weekdays": [],
+                    "weekends": []
+                }
+            }
+        },
+        {
+            "line": "F",
+            "direction": "Senhora da Hora",
+            "direction_reverse": "Fânzeres",
+            "stations_sequence": [
+                "Fânzeres",
+                "Venda Nova",
+                "Carreira",
+                "Baguim",
+                "Campainha",
+                "Rio Tinto",
+                "Levada",
+                "Nau Vitória",
+                "Nasoni",
+                "Contumil",
+                "Campanhã",
+                "Heroísmo",
+                "Campo 24 de Agosto",
+                "Bolhão",
+                "Trindade",
+                "Lapa",
+                "Carolina Michaelis",
+                "Casa da Música",
+                "Francos",
+                "Ramalde",
+                "Viso",
+                "Sete Bicas",
+                "Senhora da Hora"
+            ],
+            "travel_times_from_start": [
+                0,
+                2,
+                4,
+                6,
+                7,
+                9,
+                11,
+                12,
+                14,
+                16,
+                18,
+                20,
+                21,
+                23,
+                25,
+                27,
+                28,
+                30,
+                32,
+                33,
+                35,
+                37,
+                39
+            ],
+            "departures": {
+                "Fânzeres": {
+                    "weekdays": [],
+                    "weekends": []
+                },
+                "Venda Nova": {
+                    "weekdays": [],
+                    "weekends": []
+                },
+                "Carreira": {
+                    "weekdays": [],
+                    "weekends": []
+                },
+                "Baguim": {
+                    "weekdays": [],
+                    "weekends": []
+                },
+                "Campainha": {
+                    "weekdays": [],
+                    "weekends": []
+                },
+                "Rio Tinto": {
+                    "weekdays": [],
+                    "weekends": []
+                },
+                "Levada": {
+                    "weekdays": [],
+                    "weekends": []
+                },
+                "Nau Vitória": {
+                    "weekdays": [],
+                    "weekends": []
+                },
+                "Nasoni": {
+                    "weekdays": [],
+                    "weekends": []
+                },
+                "Contumil": {
+                    "weekdays": [],
+                    "weekends": []
+                },
+                "Campanhã": {
+                    "weekdays": [],
+                    "weekends": []
+                },
+                "Heroísmo": {
+                    "weekdays": [],
+                    "weekends": []
+                },
+                "Campo 24 de Agosto": {
+                    "weekdays": [],
+                    "weekends": []
+                },
+                "Bolhão": {
+                    "weekdays": [],
+                    "weekends": []
+                },
+                "Trindade": {
+                    "weekdays": [],
+                    "weekends": []
+                },
+                "Lapa": {
+                    "weekdays": [],
+                    "weekends": []
+                },
+                "Carolina Michaelis": {
+                    "weekdays": [],
+                    "weekends": []
+                },
+                "Casa da Música": {
+                    "weekdays": [],
+                    "weekends": []
+                },
+                "Francos": {
+                    "weekdays": [],
+                    "weekends": []
+                },
+                "Ramalde": {
+                    "weekdays": [],
+                    "weekends": []
+                },
+                "Viso": {
+                    "weekdays": [],
+                    "weekends": []
+                },
+                "Sete Bicas": {
+                    "weekdays": [],
+                    "weekends": []
+                },
+                "Senhora da Hora": {
+                    "weekdays": [],
+                    "weekends": []
                 }
             }
         }

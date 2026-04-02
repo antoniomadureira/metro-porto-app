@@ -6,14 +6,19 @@ import os
 PDF_PATH = "Matosinhos.pdf"
 OUTPUT_JSON = "../src/data/timetables.json"
 
-# A estrutura de base limpa que a nossa aplicação React entende
+# A REDE COMPLETA (Todas as Linhas)
 BASE_DATA = {
     "stations": [
         "Estádio do Dragão", "Campanhã", "Heroísmo", "Campo 24 de Agosto", "Bolhão", "Trindade", 
         "Lapa", "Carolina Michaelis", "Casa da Música", "Francos", "Ramalde", "Viso", "Sete Bicas", "Senhora da Hora", 
-        "Vasco da Gama", "Estádio do Mar", "Pedro Hispano", "Parque Maia", "Câmara de Matosinhos", "Matosinhos Sul", "Brito Capelo", "Mercado", "Senhor de Matosinhos"
+        "Vasco da Gama", "Estádio do Mar", "Pedro Hispano", "Parque Maia", "Câmara de Matosinhos", "Matosinhos Sul", "Brito Capelo", "Mercado", "Senhor de Matosinhos",
+        "Fonte do Cuco", "Custoias", "Esposade", "Crestins", "Verdes", "Pedras Rubras", "Lidador", "Vilar de Pinheiro", "Modivas Sul", "Modivas Centro", "Modivas Norte", "Mindelo", "Espaço Natureza", "Varziela", "Árvore", "Azurara", "Santa Clara", "Vila do Conde", "Alto de Pega", "Portas Fronhas", "São Brás", "Póvoa de Varzim",
+        "Araújo", "Pias", "Mandim", "Castêlo da Maia", "ISMAI",
+        "Botica", "Aeroporto",
+        "Hospital São João", "IPO", "Pólo Universitário", "Salgueiros", "Combatentes", "Marquês", "Faria Guimarães", "Aliados", "São Bento", "Jardim do Morro", "General Torres", "Câmara de Gaia", "João de Deus", "D. João II", "Santo Ovídio",
+        "Fânzeres", "Venda Nova", "Carreira", "Baguim", "Campainha", "Rio Tinto", "Levada", "Nau Vitória", "Nasoni", "Contumil"
     ],
-    "lines": ["A"],
+    "lines": ["A", "B", "C", "D", "E", "F"],
     "routes": [
         {
             "line": "A",
@@ -22,75 +27,96 @@ BASE_DATA = {
             "stations_sequence": ["Estádio do Dragão", "Campanhã", "Heroísmo", "Campo 24 de Agosto", "Bolhão", "Trindade", "Lapa", "Carolina Michaelis", "Casa da Música", "Francos", "Ramalde", "Viso", "Sete Bicas", "Senhora da Hora", "Vasco da Gama", "Estádio do Mar", "Pedro Hispano", "Parque Maia", "Câmara de Matosinhos", "Matosinhos Sul", "Brito Capelo", "Mercado", "Senhor de Matosinhos"],
             "travel_times_from_start": [0, 2, 4, 5, 7, 9, 11, 12, 14, 16, 17, 19, 21, 23, 25, 26, 28, 30, 32, 34, 35, 37, 39],
             "departures": {}
+        },
+        {
+            "line": "B",
+            "direction": "Póvoa de Varzim",
+            "direction_reverse": "Estádio do Dragão",
+            "stations_sequence": ["Estádio do Dragão", "Campanhã", "Heroísmo", "Campo 24 de Agosto", "Bolhão", "Trindade", "Lapa", "Carolina Michaelis", "Casa da Música", "Francos", "Ramalde", "Viso", "Sete Bicas", "Senhora da Hora", "Fonte do Cuco", "Custoias", "Esposade", "Crestins", "Verdes", "Pedras Rubras", "Lidador", "Vilar de Pinheiro", "Modivas Sul", "Modivas Centro", "Modivas Norte", "Mindelo", "Espaço Natureza", "Varziela", "Árvore", "Azurara", "Santa Clara", "Vila do Conde", "Alto de Pega", "Portas Fronhas", "São Brás", "Póvoa de Varzim"],
+            "travel_times_from_start": [0, 2, 4, 5, 7, 9, 11, 12, 14, 16, 17, 19, 21, 23, 25, 26, 29, 31, 33, 35, 37, 39, 41, 42, 44, 46, 48, 49, 51, 52, 54, 55, 57, 58, 60, 62],
+            "departures": {}
+        },
+        {
+            "line": "C",
+            "direction": "ISMAI",
+            "direction_reverse": "Campanhã",
+            "stations_sequence": ["Campanhã", "Heroísmo", "Campo 24 de Agosto", "Bolhão", "Trindade", "Lapa", "Carolina Michaelis", "Casa da Música", "Francos", "Ramalde", "Viso", "Sete Bicas", "Senhora da Hora", "Fonte do Cuco", "Custoias", "Araújo", "Pias", "Mandim", "Castêlo da Maia", "ISMAI"],
+            "travel_times_from_start": [0, 2, 3, 5, 7, 9, 10, 12, 14, 15, 17, 19, 21, 23, 24, 26, 28, 30, 32, 34],
+            "departures": {}
+        },
+        {
+            "line": "D",
+            "direction": "Santo Ovídio",
+            "direction_reverse": "Hospital São João",
+            "stations_sequence": ["Hospital São João", "IPO", "Pólo Universitário", "Salgueiros", "Combatentes", "Marquês", "Faria Guimarães", "Trindade", "Aliados", "São Bento", "Jardim do Morro", "General Torres", "Câmara de Gaia", "João de Deus", "D. João II", "Santo Ovídio"],
+            "travel_times_from_start": [0, 2, 4, 6, 7, 9, 11, 13, 14, 16, 19, 21, 23, 24, 26, 28],
+            "departures": {}
+        },
+        {
+            "line": "E",
+            "direction": "Aeroporto",
+            "direction_reverse": "Trindade",
+            "stations_sequence": ["Trindade", "Lapa", "Carolina Michaelis", "Casa da Música", "Francos", "Ramalde", "Viso", "Sete Bicas", "Senhora da Hora", "Fonte do Cuco", "Custoias", "Esposade", "Crestins", "Verdes", "Botica", "Aeroporto"],
+            "travel_times_from_start": [0, 2, 3, 5, 7, 8, 10, 12, 14, 16, 17, 20, 22, 24, 26, 28],
+            "departures": {}
+        },
+        {
+            "line": "F",
+            "direction": "Senhora da Hora",
+            "direction_reverse": "Fânzeres",
+            "stations_sequence": ["Fânzeres", "Venda Nova", "Carreira", "Baguim", "Campainha", "Rio Tinto", "Levada", "Nau Vitória", "Nasoni", "Contumil", "Campanhã", "Heroísmo", "Campo 24 de Agosto", "Bolhão", "Trindade", "Lapa", "Carolina Michaelis", "Casa da Música", "Francos", "Ramalde", "Viso", "Sete Bicas", "Senhora da Hora"],
+            "travel_times_from_start": [0, 2, 4, 6, 7, 9, 11, 12, 14, 16, 18, 20, 21, 23, 25, 27, 28, 30, 32, 33, 35, 37, 39],
+            "departures": {}
         }
     ]
 }
 
 def build_timetables():
-    # Inicializar os dicionários de partidas vazios para cada estação
-    seq = BASE_DATA["routes"][0]["stations_sequence"]
-    for station in seq:
-        BASE_DATA["routes"][0]["departures"][station] = {
-            "weekdays": [],
-            "weekends": []
-        }
+    # Inicializa partidas vazias para TODAS as linhas
+    for route in BASE_DATA["routes"]:
+        for station in route["stations_sequence"]:
+            route["departures"][station] = {"weekdays": [], "weekends": []}
 
     print(f"A processar o ficheiro {PDF_PATH}...")
-    
     try:
         with pdfplumber.open(PDF_PATH) as pdf:
             for i, page in enumerate(pdf.pages):
                 text = page.extract_text()
-                if not text:
-                    continue
+                if not text: continue
 
-                # 1. Detetar o tipo de dia
-                day_type = "weekdays"
-                if re.search(r'(Sábado|Domingo|Feriado|Weekends|Holidays)', text, re.IGNORECASE):
-                    day_type = "weekends"
-
-                # 2. Detetar a direção pela análise das primeiras linhas da página
-                header_text = "\n".join(text.split('\n')[:8])
-                is_reverse = False
+                day_type = "weekends" if re.search(r'(Sábado|Domingo|Feriado)', text, re.IGNORECASE) else "weekdays"
                 
-                # Se o destino for Estádio do Dragão, a viagem é no sentido inverso
-                if "Estádio do Dragão" in header_text and "Sentido" in header_text:
-                    is_reverse = True
+                header_text = "\n".join(text.split('\n')[:8])
+                is_reverse = "Estádio do Dragão" in header_text and "Sentido" in header_text
 
-                # Definir a sequência de estações a usar para mapear as colunas
-                current_seq = list(reversed(seq)) if is_reverse else seq
+                # Aplica apenas à Linha A (pois o PDF é de Matosinhos)
+                route_A = BASE_DATA["routes"][0]
+                current_seq = list(reversed(route_A["stations_sequence"])) if is_reverse else route_A["stations_sequence"]
 
-                # 3. Extrair as horas
                 for line in text.split('\n'):
-                    # Procura todos os padrões do tipo HH:MM na linha
                     times = re.findall(r'\b\d{2}:\d{2}\b', line)
-                    
-                    # Se tiver várias horas, é uma linha de horários real
                     if len(times) > 5:
                         for idx, time_str in enumerate(times):
-                            # Prevenção: garantir que não excedemos o número de estações
                             if idx < len(current_seq):
                                 station = current_seq[idx]
-                                # Adicionar a hora à lista se ainda não existir
-                                if time_str not in BASE_DATA["routes"][0]["departures"][station][day_type]:
-                                    BASE_DATA["routes"][0]["departures"][station][day_type].append(time_str)
+                                if time_str not in route_A["departures"][station][day_type]:
+                                    route_A["departures"][station][day_type].append(time_str)
                                     
-        print("✓ Leitura do PDF concluída com sucesso!")
-
     except Exception as e:
-        print(f"❌ Erro durante a leitura: {e}")
+        print(f"Erro: {e}")
         return
 
-    # 4. Ordenar as horas cronologicamente e gravar o ficheiro
-    for station in seq:
-        BASE_DATA["routes"][0]["departures"][station]["weekdays"].sort()
-        BASE_DATA["routes"][0]["departures"][station]["weekends"].sort()
+    # Ordenar horas
+    for route in BASE_DATA["routes"]:
+        for station in route["stations_sequence"]:
+            route["departures"][station]["weekdays"].sort()
+            route["departures"][station]["weekends"].sort()
 
     os.makedirs(os.path.dirname(OUTPUT_JSON), exist_ok=True)
     with open(OUTPUT_JSON, "w", encoding="utf-8") as f:
         json.dump(BASE_DATA, f, indent=4, ensure_ascii=False)
         
-    print(f"✓ Ficheiro gravado em {OUTPUT_JSON}. O teu Frontend já tem os dados reais!")
+    print(f"✓ Rede completa gerada em {OUTPUT_JSON}!")
 
 if __name__ == "__main__":
     build_timetables()
