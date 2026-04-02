@@ -1,18 +1,38 @@
 {
-    "stations": ["Trindade", "Carolina Michaelis", "Casa da Música", "Senhora da Hora", "Matosinhos Sul", "Senhor de Matosinhos"],
-    "lines": ["A"],
+    "stations": [
+        "Estádio do Dragão", "Campanhã", "Heroísmo", "Campo 24 de Agosto", "Bolhão", "Trindade", 
+        "Lapa", "Carolina Michaelis", "Casa da Música", "Francos", "Ramalde", "Viso", "Sete Bicas", "Senhora da Hora", 
+        "Sete Bicas", "Senhora da Hora", "Vasco da Gama", "Estádio do Mar", "Pedro Hispano", "Parque Maia",
+        "Câmara de Matosinhos", "Matosinhos Sul", "Brito Capelo", "Mercado", "Senhor de Matosinhos",
+        "Fonte do Cuco", "Custoias", "Araújo", "Pias", "Lidador", "Pedras Rubras", "Botica", "Aeroporto",
+        "Faria Guimarães", "Marquês", "Combatentes", "Salgueiros", "Pólo Universitário", "IPO", "Hospital São João",
+        "Aliados", "São Bento", "Jardim do Morro", "General Torres", "Câmara de Gaia", "João de Deus", "D. João II", "Santo Ovídio"
+    ],
+    "lines": ["A", "B", "C", "D", "E", "F"],
     "routes": [
         {
             "line": "A",
             "direction": "Senhor de Matosinhos",
-            "stations_sequence": ["Trindade", "Carolina Michaelis", "Casa da Música", "Senhora da Hora", "Matosinhos Sul", "Senhor de Matosinhos"],
-            "travel_times_from_start": [0, 3, 5, 12, 23, 26],
-            "departures": {
-                "Trindade": {
-                    "weekdays": ["17:50", "18:02", "18:14", "18:26", "18:38", "18:50"],
-                    "weekends": ["18:00", "18:30", "19:00"]
-                }
-            }
+            "direction_reverse": "Estádio do Dragão",
+            "stations_sequence": ["Estádio do Dragão", "Campanhã", "Heroísmo", "Campo 24 de Agosto", "Bolhão", "Trindade", "Lapa", "Carolina Michaelis", "Casa da Música", "Francos", "Ramalde", "Viso", "Sete Bicas", "Senhora da Hora", "Vasco da Gama", "Estádio do Mar", "Pedro Hispano", "Parque Maia", "Câmara de Matosinhos", "Matosinhos Sul", "Brito Capelo", "Mercado", "Senhor de Matosinhos"],
+            "travel_times_from_start": [0, 2, 4, 5, 7, 9, 11, 12, 14, 16, 17, 19, 21, 23, 25, 26, 28, 30, 32, 34, 35, 37, 39],
+            "departures": {}
+        },
+        {
+            "line": "D",
+            "direction": "Santo Ovídio",
+            "direction_reverse": "Hospital São João",
+            "stations_sequence": ["Hospital São João", "IPO", "Pólo Universitário", "Salgueiros", "Combatentes", "Marquês", "Faria Guimarães", "Trindade", "Aliados", "São Bento", "Jardim do Morro", "General Torres", "Câmara de Gaia", "João de Deus", "D. João II", "Santo Ovídio"],
+            "travel_times_from_start": [0, 2, 4, 6, 7, 9, 11, 13, 14, 16, 19, 21, 23, 24, 26, 28],
+            "departures": {}
+        },
+        {
+            "line": "E",
+            "direction": "Aeroporto",
+            "direction_reverse": "Trindade",
+            "stations_sequence": ["Trindade", "Lapa", "Carolina Michaelis", "Casa da Música", "Francos", "Ramalde", "Viso", "Sete Bicas", "Senhora da Hora", "Fonte do Cuco", "Custoias", "Araújo", "Pias", "Lidador", "Pedras Rubras", "Botica", "Aeroporto"],
+            "travel_times_from_start": [0, 2, 3, 5, 7, 8, 10, 12, 14, 16, 18, 20, 22, 23, 25, 27, 29],
+            "departures": {}
         }
     ]
 }
