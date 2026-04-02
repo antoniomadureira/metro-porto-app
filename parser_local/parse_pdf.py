@@ -39,20 +39,20 @@ BASE_DATA = {
 }
 
 def build_timetables():
-    # Inicializa as matrizes para garantir que o React não rebenta
+    # Inicializa tudo a zero
     for route in BASE_DATA["routes"]:
         for station in route["stations_sequence"]:
             route["departures"][station] = {"weekdays": [], "weekends": []}
             route["departures_reverse"][station] = {"weekdays": [], "weekends": []}
 
-    print(f"A ler o PDF como um humano (Eixo Y)...")
+    print(f"A restaurar a leitura correta do PDF...")
     try:
         with pdfplumber.open(PDF_PATH) as pdf:
             for page in pdf.pages:
                 text = page.extract_text()
                 if not text: continue
 
-                day_type = "weekends" if re.search(r'(Sábado|Domingo|Feriado|odabáS|ognimoD)', text, re.IGNORECASE) else "weekdays"
+                day_type = "weekends" if re.search(r'(Sábado|Domingo|Feriado|odabáS|ognimoD|odaireF|Weekends)', text, re.IGNORECASE) else "weekdays"
                 header_text = "\n".join(text.split('\n')[:8])
                 is_reverse = "Estádio do Dragão" in header_text and "Sentido" in header_text
 
@@ -60,32 +60,32 @@ def build_timetables():
                 current_seq = list(reversed(route_A["stations_sequence"])) if is_reverse else route_A["stations_sequence"]
                 target_departures = route_A["departures_reverse"] if is_reverse else route_A["departures"]
 
-                # O SEGREDO ESTÁ AQUI: Cada linha iterada é UMA estação (eixo Y). 
-                station_idx = 0
+                # LÓGICA CORRIGIDA: Voltar a ler na horizontal (1 linha de texto = 1 viagem completa)
                 for line in text.split('\n'):
                     times = re.findall(r'\b\d{2}:\d{2}\b', line)
-                    if len(times) >= 3: # Encontrou uma linha com horários!
-                        if station_idx < len(current_seq):
-                            station = current_seq[station_idx]
-                            target_departures[station][day_type].extend(times)
-                            station_idx += 1 # Passa para a próxima estação!
+                    if len(times) >= 5: # Garante que não apanha falsos positivos
+                        for idx, time_str in enumerate(times):
+                            if idx < len(current_seq):
+                                station = current_seq[idx]
+                                target_departures[station][day_type].append(time_str)
                                     
     except Exception as e:
         print(f"Erro: {e}")
         return
 
     # Limpar duplicados e ordenar
-    for station in BASE_DATA["routes"][0]["stations_sequence"]:
-        BASE_DATA["routes"][0]["departures"][station]["weekdays"] = sorted(list(set(BASE_DATA["routes"][0]["departures"][station]["weekdays"])))
-        BASE_DATA["routes"][0]["departures"][station]["weekends"] = sorted(list(set(BASE_DATA["routes"][0]["departures"][station]["weekends"])))
-        BASE_DATA["routes"][0]["departures_reverse"][station]["weekdays"] = sorted(list(set(BASE_DATA["routes"][0]["departures_reverse"][station]["weekdays"])))
-        BASE_DATA["routes"][0]["departures_reverse"][station]["weekends"] = sorted(list(set(BASE_DATA["routes"][0]["departures_reverse"][station]["weekends"])))
+    for route in BASE_DATA["routes"]:
+        for station in route["stations_sequence"]:
+            route["departures"][station]["weekdays"] = sorted(list(set(route["departures"][station]["weekdays"])))
+            route["departures"][station]["weekends"] = sorted(list(set(route["departures"][station]["weekends"])))
+            route["departures_reverse"][station]["weekdays"] = sorted(list(set(route["departures_reverse"][station]["weekdays"])))
+            route["departures_reverse"][station]["weekends"] = sorted(list(set(route["departures_reverse"][station]["weekends"])))
 
     os.makedirs(os.path.dirname(OUTPUT_JSON), exist_ok=True)
     with open(OUTPUT_JSON, "w", encoding="utf-8") as f:
         json.dump(BASE_DATA, f, indent=4, ensure_ascii=False)
         
-    print(f"✓ Ficheiro gerado com absoluta precisão no Eixo Y!")
+    print(f"✓ Base de dados restaurada e horários reconstruídos!")
 
 if __name__ == "__main__":
     build_timetables()

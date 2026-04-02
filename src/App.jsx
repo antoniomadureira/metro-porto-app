@@ -20,7 +20,11 @@ function App() {
   useEffect(() => localStorage.setItem('metroFavorites', JSON.stringify(favorites)), [favorites]);
   const toggleFavorite = (s) => setFavorites(p => p.includes(s) ? p.filter(x => x !== s) : [...p, s]);
 
-  // Função core de cálculo de viagem (1 perna)
+  // ORDENAÇÃO ALFABÉTICA RESTAURADA (Garante que a lista fica fácil de ler)
+  const allStationsSorted = [...new Set(metroData.stations)].sort((a, b) => a.localeCompare(b, 'pt-PT'));
+  const favoriteStations = allStationsSorted.filter(s => favorites.includes(s));
+  const otherStations = allStationsSorted.filter(s => !favorites.includes(s));
+
   const getLegDetails = (route, start, end, reqTime, dayType) => {
     const seq = route.stations_sequence;
     const startIdx = seq.indexOf(start);
@@ -59,7 +63,6 @@ function App() {
     const reqTime = new Date(datetime);
     const dayType = (reqTime.getDay() === 0 || reqTime.getDay() === 6) ? "weekends" : "weekdays";
 
-    // 1. TENTAR VIAGEM DIRETA
     let bestDirect = null;
     for (const route of metroData.routes) {
       if (route.stations_sequence.includes(origin) && route.stations_sequence.includes(destination)) {
@@ -68,11 +71,8 @@ function App() {
       }
     }
 
-    if (bestDirect) {
-      return setResult({ type: 'direct', ...bestDirect });
-    }
+    if (bestDirect) return setResult({ type: 'direct', ...bestDirect });
 
-    // 2. TENTAR VIAGEM COM TRANSBORDO (Multi-linha)
     let bestTransfer = null;
     const originRoutes = metroData.routes.filter(r => r.stations_sequence.includes(origin));
     const destRoutes = metroData.routes.filter(r => r.stations_sequence.includes(destination));
@@ -86,7 +86,6 @@ function App() {
           const leg1 = getLegDetails(oRoute, origin, transfer, reqTime, dayType);
           if (!leg1) continue;
 
-          // Dá margem de 3 minutos para mudar de plataforma
           const transferTime = new Date(leg1.arrivalTime.getTime() + 3 * 60000);
           const leg2 = getLegDetails(dRoute, transfer, destination, transferTime, dayType);
           if (!leg2) continue;
@@ -107,7 +106,7 @@ function App() {
     }
 
     if (bestTransfer) return setResult(bestTransfer);
-    setError("⚠️ Não foi possível calcular o percurso. Não existem horários oficiais registados para estas estações.");
+    setError("⚠️ Não foi possível calcular o percurso. Ou não existe ligação, ou não temos os PDFs dessas linhas.");
   };
 
   const fmtTime = (d) => d.toLocaleTimeString('pt-PT', { hour: '2-digit', minute: '2-digit' });
@@ -123,7 +122,8 @@ function App() {
               <label className="block text-xs font-bold text-gray-500 uppercase">Origem</label>
               <select className="mt-1 w-full rounded-md border-gray-300 bg-gray-50 p-2 border" value={origin} onChange={e => setOrigin(e.target.value)} required>
                 <option value="">Selecionar</option>
-                {metroData.stations.map(s => <option key={`o-${s}`} value={s}>{s}</option>)}
+                {favoriteStations.length > 0 && <optgroup label="⭐ Favoritas">{favoriteStations.map(s => <option key={`orig-fav-${s}`} value={s}>{s}</option>)}</optgroup>}
+                <optgroup label="Todas as Estações">{otherStations.map(s => <option key={`orig-${s}`} value={s}>{s}</option>)}</optgroup>
               </select>
             </div>
             <button type="button" onClick={() => toggleFavorite(origin)} className="mt-5">{favorites.includes(origin) ? <StarFilled /> : <StarOutline />}</button>
@@ -134,7 +134,8 @@ function App() {
               <label className="block text-xs font-bold text-gray-500 uppercase">Destino</label>
               <select className="mt-1 w-full rounded-md border-gray-300 bg-gray-50 p-2 border" value={destination} onChange={e => setDestination(e.target.value)} required>
                 <option value="">Selecionar</option>
-                {metroData.stations.map(s => <option key={`d-${s}`} value={s}>{s}</option>)}
+                {favoriteStations.length > 0 && <optgroup label="⭐ Favoritas">{favoriteStations.map(s => <option key={`dest-fav-${s}`} value={s}>{s}</option>)}</optgroup>}
+                <optgroup label="Todas as Estações">{otherStations.map(s => <option key={`dest-${s}`} value={s}>{s}</option>)}</optgroup>
               </select>
             </div>
             <button type="button" onClick={() => toggleFavorite(destination)} className="mt-5">{favorites.includes(destination) ? <StarFilled /> : <StarOutline />}</button>
