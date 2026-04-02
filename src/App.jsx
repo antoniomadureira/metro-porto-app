@@ -20,10 +20,8 @@ function App() {
   useEffect(() => localStorage.setItem('metroFavorites', JSON.stringify(favorites)), [favorites]);
   const toggleFavorite = (s) => setFavorites(p => p.includes(s) ? p.filter(x => x !== s) : [...p, s]);
 
-  // ORDENAÇÃO ALFABÉTICA RESTAURADA (Garante que a lista fica fácil de ler)
-  const allStationsSorted = [...new Set(metroData.stations)].sort((a, b) => a.localeCompare(b, 'pt-PT'));
-  const favoriteStations = allStationsSorted.filter(s => favorites.includes(s));
-  const otherStations = allStationsSorted.filter(s => !favorites.includes(s));
+  const favoriteStations = metroData.stations.filter(s => favorites.includes(s));
+  const otherStations = metroData.stations.filter(s => !favorites.includes(s));
 
   const getLegDetails = (route, start, end, reqTime, dayType) => {
     const seq = route.stations_sequence;
@@ -33,7 +31,7 @@ function App() {
     const duration = Math.abs(route.travel_times_from_start[endIdx] - route.travel_times_from_start[startIdx]);
     
     const targetDepartures = isReverse ? route.departures_reverse : route.departures;
-    if (!targetDepartures[start] || !targetDepartures[start][dayType] || targetDepartures[start][dayType].length === 0) return null;
+    if (!targetDepartures[start] || targetDepartures[start][dayType].length === 0) return null;
 
     let nextTrain = null;
     for (const dep of targetDepartures[start][dayType]) {
@@ -43,15 +41,17 @@ function App() {
     }
     if (!nextTrain) return null;
 
-    const path = isReverse ? seq.slice(endIdx, startIdx + 1).reverse() : seq.slice(startIdx, endIdx + 1);
-    
+    // Criar os passos para a lista visual
+    const stationsPath = isReverse ? seq.slice(endIdx, startIdx + 1).reverse() : seq.slice(startIdx, endIdx + 1);
+    const pathObjects = stationsPath.map(name => ({ name, type: 'station' }));
+
     return {
       line: route.line,
       direction: isReverse ? route.direction_reverse : route.direction,
       departureTime: nextTrain,
       arrivalTime: new Date(nextTrain.getTime() + duration * 60000),
       duration,
-      path
+      path: pathObjects
     };
   };
 
@@ -63,6 +63,7 @@ function App() {
     const reqTime = new Date(datetime);
     const dayType = (reqTime.getDay() === 0 || reqTime.getDay() === 6) ? "weekends" : "weekdays";
 
+    // 1. TENTAR LIGAÇÃO DIRETA
     let bestDirect = null;
     for (const route of metroData.routes) {
       if (route.stations_sequence.includes(origin) && route.stations_sequence.includes(destination)) {
@@ -73,12 +74,16 @@ function App() {
 
     if (bestDirect) return setResult({ type: 'direct', ...bestDirect });
 
+    // 2. TENTAR LIGAÇÃO COM 1 TRANSBORDO (Multi-linha)
     let bestTransfer = null;
     const originRoutes = metroData.routes.filter(r => r.stations_sequence.includes(origin));
     const destRoutes = metroData.routes.filter(r => r.stations_sequence.includes(destination));
 
     for (const oRoute of originRoutes) {
       for (const dRoute of destRoutes) {
+        // CORREÇÃO CRÍTICA: Impedir transbordo para a mesma linha
+        if (oRoute.line === dRoute.line) continue; 
+
         const intersections = oRoute.stations_sequence.filter(s => dRoute.stations_sequence.includes(s));
         for (const transfer of intersections) {
           if (transfer === origin || transfer === destination) continue;
@@ -86,19 +91,25 @@ function App() {
           const leg1 = getLegDetails(oRoute, origin, transfer, reqTime, dayType);
           if (!leg1) continue;
 
-          const transferTime = new Date(leg1.arrivalTime.getTime() + 3 * 60000);
+          const transferTime = new Date(leg1.arrivalTime.getTime() + 4 * 60000); // 4 minutos para trocar
           const leg2 = getLegDetails(dRoute, transfer, destination, transferTime, dayType);
           if (!leg2) continue;
 
           const totalArr = leg2.arrivalTime;
           if (!bestTransfer || totalArr < bestTransfer.arrivalTime) {
+            
+            // Juntar o percurso visual das duas pernas com o nó de transbordo
+            const leg1PathClean = leg1.path.slice(0, -1);
+            const transferNode = { name: `Sair e mudar para a Linha ${dRoute.line} em ${transfer}`, type: 'transfer' };
+            const fullPath = [...leg1PathClean, transferNode, ...leg2.path];
+
             bestTransfer = {
               type: 'transfer',
               departureTime: leg1.departureTime,
               arrivalTime: leg2.arrivalTime,
               duration: Math.round((totalArr - leg1.departureTime) / 60000),
               leg1, leg2,
-              path: [...leg1.path, "🔄 TRANSBORDO (" + transfer + ")", ...leg2.path.slice(1)]
+              path: fullPath
             };
           }
         }
@@ -106,7 +117,7 @@ function App() {
     }
 
     if (bestTransfer) return setResult(bestTransfer);
-    setError("⚠️ Não foi possível calcular o percurso. Ou não existe ligação, ou não temos os PDFs dessas linhas.");
+    setError("⚠️ Não foi possível calcular um trajeto entre estas estações.");
   };
 
   const fmtTime = (d) => d.toLocaleTimeString('pt-PT', { hour: '2-digit', minute: '2-digit' });
@@ -160,7 +171,7 @@ function App() {
               </div>
             ) : (
               <div className="flex flex-col border-b pb-3 mb-3 space-y-2">
-                <span className="text-xs bg-purple-100 text-purple-800 px-2 py-1 rounded-full font-bold uppercase w-max mb-1">Caminho Multi-linha</span>
+                <span className="text-xs bg-purple-100 text-purple-800 px-2 py-1 rounded-full font-bold uppercase w-max mb-1">Viajem com Transbordo</span>
                 <div className="flex items-center text-sm font-medium text-gray-600">
                   <span className="bg-gray-200 px-2 rounded mr-2">1</span> Linha {result.leg1.line} (Sentido {result.leg1.direction})
                 </div>
@@ -179,16 +190,24 @@ function App() {
               <span className="text-xl font-bold text-gray-800">{fmtTime(result.arrivalTime)}</span>
             </div>
             
-            <div className="mt-4 pt-4 border-t border-gray-100">
-              <p className="font-semibold text-xs text-gray-400 uppercase tracking-wider mb-3">Paragens do Percurso ({result.duration} min)</p>
-              <div className="flex flex-wrap gap-2">
-                {result.path.map((station, i) => (
-                  <span key={i} className={`text-xs px-2 py-1 rounded border ${station.includes("TRANSBORDO") ? 'bg-purple-50 text-purple-700 border-purple-200 font-bold' : 'bg-gray-50 text-gray-600 border-gray-200'}`}>
-                    {station}
-                  </span>
+            {/* NOVIDADE: O Percurso detalhado verticalmente */}
+            <div className="mt-5 pt-4 border-t border-gray-100">
+              <p className="font-semibold text-xs text-gray-400 uppercase tracking-wider mb-4">Trajeto e Paragens ({result.duration} min)</p>
+              <div className="space-y-3">
+                {result.path.map((step, i) => (
+                  <div key={i} className="flex items-start">
+                    <div className="flex flex-col items-center mr-3 mt-1">
+                      <div className={`w-3 h-3 rounded-full ${step.type === 'transfer' ? 'bg-purple-500' : 'bg-blue-400'}`}></div>
+                      {i !== result.path.length - 1 && <div className="w-0.5 h-6 bg-gray-200 my-1"></div>}
+                    </div>
+                    <span className={`text-sm ${step.type === 'transfer' ? 'font-bold text-purple-700' : 'text-gray-700 font-medium'}`}>
+                      {step.name}
+                    </span>
+                  </div>
                 ))}
               </div>
             </div>
+
           </div>
         )}
       </div>
