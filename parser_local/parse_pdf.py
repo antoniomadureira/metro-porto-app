@@ -6,7 +6,6 @@ import os
 PDF_PATH = "Matosinhos.pdf"
 OUTPUT_JSON = "../src/data/timetables.json"
 
-# REDE COM A ESTAÇÃO "PARQUE REAL" CORRIGIDA
 BASE_DATA = {
     "stations": [
         "Estádio do Dragão", "Campanhã", "Heroísmo", "Campo 24 de Agosto", "Bolhão", "Trindade", 
@@ -29,12 +28,10 @@ BASE_DATA = {
             "departures": {},
             "departures_reverse": {}
         }
-        # (As outras linhas podem ser adicionadas no futuro, mantemos o foco na Linha A para já)
     ]
 }
 
 def build_timetables():
-    # Inicializa partidas VAZIAS e SEPARADAS por direção
     route_A = BASE_DATA["routes"][0]
     for station in route_A["stations_sequence"]:
         route_A["departures"][station] = {"weekdays": [], "weekends": []}
@@ -47,42 +44,40 @@ def build_timetables():
                 text = page.extract_text()
                 if not text: continue
 
-                day_type = "weekends" if re.search(r'(Sábado|Domingo|Feriado)', text, re.IGNORECASE) else "weekdays"
+                # A MAGIA ACONTECE AQUI: Procurar Sábados/Domingos de forma normal ou invertida
+                is_weekend = re.search(r'(Sábado|Domingo|Feriado|odabáS|ognimoD|odaireF|Weekends)', text, re.IGNORECASE)
+                day_type = "weekends" if is_weekend else "weekdays"
                 
-                # Descobre o sentido do cabeçalho
                 header_text = "\n".join(text.split('\n')[:8])
                 is_reverse = "Estádio do Dragão" in header_text and "Sentido" in header_text
 
-                # Escolhe a lista correta consoante a direção
                 current_seq = list(reversed(route_A["stations_sequence"])) if is_reverse else route_A["stations_sequence"]
                 target_departures = route_A["departures_reverse"] if is_reverse else route_A["departures"]
 
-                # Lógica de extração
                 for line in text.split('\n'):
                     times = re.findall(r'\b\d{2}:\d{2}\b', line)
                     if len(times) > 5:
                         for idx, time_str in enumerate(times):
                             if idx < len(current_seq):
                                 station = current_seq[idx]
-                                if time_str not in target_departures[station][day_type]:
-                                    target_departures[station][day_type].append(time_str)
+                                target_departures[station][day_type].append(time_str)
                                     
     except Exception as e:
         print(f"Erro: {e}")
         return
 
-    # Ordenar as horas
+    # Limpar horas duplicadas e ordená-las cronologicamente
     for station in route_A["stations_sequence"]:
-        route_A["departures"][station]["weekdays"].sort()
-        route_A["departures"][station]["weekends"].sort()
-        route_A["departures_reverse"][station]["weekdays"].sort()
-        route_A["departures_reverse"][station]["weekends"].sort()
+        route_A["departures"][station]["weekdays"] = sorted(list(set(route_A["departures"][station]["weekdays"])))
+        route_A["departures"][station]["weekends"] = sorted(list(set(route_A["departures"][station]["weekends"])))
+        route_A["departures_reverse"][station]["weekdays"] = sorted(list(set(route_A["departures_reverse"][station]["weekdays"])))
+        route_A["departures_reverse"][station]["weekends"] = sorted(list(set(route_A["departures_reverse"][station]["weekends"])))
 
     os.makedirs(os.path.dirname(OUTPUT_JSON), exist_ok=True)
     with open(OUTPUT_JSON, "w", encoding="utf-8") as f:
         json.dump(BASE_DATA, f, indent=4, ensure_ascii=False)
         
-    print(f"✓ Base de dados gerada com IDA e VOLTA separadas em {OUTPUT_JSON}!")
+    print(f"✓ Ficheiro reparado! Fim de semana e Dias Úteis separados corretamente em {OUTPUT_JSON}!")
 
 if __name__ == "__main__":
     build_timetables()
