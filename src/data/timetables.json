@@ -1,0 +1,18 @@
+{
+    "stations": ["Trindade", "Carolina Michaelis", "Casa da Música", "Senhora da Hora", "Matosinhos Sul", "Senhor de Matosinhos"],
+    "lines": ["A"],
+    "routes": [
+        {
+            "line": "A",
+            "direction": "Senhor de Matosinhos",
+            "stations_sequence": ["Trindade", "Carolina Michaelis", "Casa da Música", "Senhora da Hora", "Matosinhos Sul", "Senhor de Matosinhos"],
+            "travel_times_from_start": [0, 3, 5, 12, 23, 26],
+            "departures": {
+                "Trindade": {
+                    "weekdays": ["17:50", "18:02", "18:14", "18:26", "18:38", "18:50"],
+                    "weekends": ["18:00", "18:30", "19:00"]
+                }
+            }
+        }
+    ]
+}
