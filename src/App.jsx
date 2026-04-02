@@ -20,8 +20,9 @@ function App() {
   useEffect(() => localStorage.setItem('metroFavorites', JSON.stringify(favorites)), [favorites]);
   const toggleFavorite = (s) => setFavorites(p => p.includes(s) ? p.filter(x => x !== s) : [...p, s]);
 
-  const favoriteStations = metroData.stations.filter(s => favorites.includes(s));
-  const otherStations = metroData.stations.filter(s => !favorites.includes(s));
+  const allStationsSorted = [...new Set(metroData.stations)].sort((a, b) => a.localeCompare(b, 'pt-PT'));
+  const favoriteStations = allStationsSorted.filter(s => favorites.includes(s));
+  const otherStations = allStationsSorted.filter(s => !favorites.includes(s));
 
   const getLegDetails = (route, start, end, reqTime, dayType) => {
     const seq = route.stations_sequence;
@@ -31,7 +32,7 @@ function App() {
     const duration = Math.abs(route.travel_times_from_start[endIdx] - route.travel_times_from_start[startIdx]);
     
     const targetDepartures = isReverse ? route.departures_reverse : route.departures;
-    if (!targetDepartures[start] || targetDepartures[start][dayType].length === 0) return null;
+    if (!targetDepartures[start] || !targetDepartures[start][dayType] || targetDepartures[start][dayType].length === 0) return null;
 
     let nextTrain = null;
     for (const dep of targetDepartures[start][dayType]) {
@@ -41,7 +42,6 @@ function App() {
     }
     if (!nextTrain) return null;
 
-    // Criar os passos para a lista visual
     const stationsPath = isReverse ? seq.slice(endIdx, startIdx + 1).reverse() : seq.slice(startIdx, endIdx + 1);
     const pathObjects = stationsPath.map(name => ({ name, type: 'station' }));
 
@@ -63,7 +63,6 @@ function App() {
     const reqTime = new Date(datetime);
     const dayType = (reqTime.getDay() === 0 || reqTime.getDay() === 6) ? "weekends" : "weekdays";
 
-    // 1. TENTAR LIGAÇÃO DIRETA
     let bestDirect = null;
     for (const route of metroData.routes) {
       if (route.stations_sequence.includes(origin) && route.stations_sequence.includes(destination)) {
@@ -74,14 +73,12 @@ function App() {
 
     if (bestDirect) return setResult({ type: 'direct', ...bestDirect });
 
-    // 2. TENTAR LIGAÇÃO COM 1 TRANSBORDO (Multi-linha)
     let bestTransfer = null;
     const originRoutes = metroData.routes.filter(r => r.stations_sequence.includes(origin));
     const destRoutes = metroData.routes.filter(r => r.stations_sequence.includes(destination));
 
     for (const oRoute of originRoutes) {
       for (const dRoute of destRoutes) {
-        // CORREÇÃO CRÍTICA: Impedir transbordo para a mesma linha
         if (oRoute.line === dRoute.line) continue; 
 
         const intersections = oRoute.stations_sequence.filter(s => dRoute.stations_sequence.includes(s));
@@ -91,14 +88,12 @@ function App() {
           const leg1 = getLegDetails(oRoute, origin, transfer, reqTime, dayType);
           if (!leg1) continue;
 
-          const transferTime = new Date(leg1.arrivalTime.getTime() + 4 * 60000); // 4 minutos para trocar
+          const transferTime = new Date(leg1.arrivalTime.getTime() + 4 * 60000); 
           const leg2 = getLegDetails(dRoute, transfer, destination, transferTime, dayType);
           if (!leg2) continue;
 
           const totalArr = leg2.arrivalTime;
           if (!bestTransfer || totalArr < bestTransfer.arrivalTime) {
-            
-            // Juntar o percurso visual das duas pernas com o nó de transbordo
             const leg1PathClean = leg1.path.slice(0, -1);
             const transferNode = { name: `Sair e mudar para a Linha ${dRoute.line} em ${transfer}`, type: 'transfer' };
             const fullPath = [...leg1PathClean, transferNode, ...leg2.path];
@@ -117,7 +112,7 @@ function App() {
     }
 
     if (bestTransfer) return setResult(bestTransfer);
-    setError("⚠️ Não foi possível calcular um trajeto entre estas estações.");
+    setError("⚠️ Não existem horários processados para esta rota neste momento.");
   };
 
   const fmtTime = (d) => d.toLocaleTimeString('pt-PT', { hour: '2-digit', minute: '2-digit' });
@@ -163,14 +158,18 @@ function App() {
         {error && <div className="mt-6 p-4 bg-red-50 text-red-700 rounded-md border border-red-200 text-sm font-medium">{error}</div>}
 
         {result && (
-          <div className="mt-6 p-5 bg-white border border-gray-200 rounded-xl shadow-sm">
+          <div className="mt-6 p-5 bg-white border border-gray-200 rounded-xl shadow-sm relative">
+             <div className="absolute -top-3 right-4">
+               <span className="bg-green-100 text-green-800 text-xs font-bold px-3 py-1 rounded-full border border-green-300 shadow-sm">✅ Horário Calculado</span>
+            </div>
+
             {result.type === 'direct' ? (
-              <div className="flex justify-between items-center border-b pb-3 mb-3">
+              <div className="flex justify-between items-center border-b pb-3 mb-3 mt-2">
                 <h3 className="font-bold text-gray-800 text-lg">Linha {result.line}</h3>
-                <span className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded-full font-bold uppercase">Sentido {result.direction}</span>
+                <span className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded-full font-bold uppercase text-right ml-2 leading-tight">Sentido<br/>{result.direction}</span>
               </div>
             ) : (
-              <div className="flex flex-col border-b pb-3 mb-3 space-y-2">
+              <div className="flex flex-col border-b pb-3 mb-3 space-y-2 mt-2">
                 <span className="text-xs bg-purple-100 text-purple-800 px-2 py-1 rounded-full font-bold uppercase w-max mb-1">Viajem com Transbordo</span>
                 <div className="flex items-center text-sm font-medium text-gray-600">
                   <span className="bg-gray-200 px-2 rounded mr-2">1</span> Linha {result.leg1.line} (Sentido {result.leg1.direction})
@@ -190,7 +189,6 @@ function App() {
               <span className="text-xl font-bold text-gray-800">{fmtTime(result.arrivalTime)}</span>
             </div>
             
-            {/* NOVIDADE: O Percurso detalhado verticalmente */}
             <div className="mt-5 pt-4 border-t border-gray-100">
               <p className="font-semibold text-xs text-gray-400 uppercase tracking-wider mb-4">Trajeto e Paragens ({result.duration} min)</p>
               <div className="space-y-3">
