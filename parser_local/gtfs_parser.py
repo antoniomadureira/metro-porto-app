@@ -15,6 +15,7 @@ def time_to_minutes(t_str):
 def process_gtfs():
     if not os.path.exists(ZIP_FILE):
         print(f"Erro: O ficheiro {ZIP_FILE} não foi encontrado na pasta!")
+        print("Por favor, descarrega o ZIP oficial do portal de dados abertos e coloca-o aqui.")
         return
 
     stops = {}
@@ -27,25 +28,29 @@ def process_gtfs():
     trip_stops = defaultdict(list)
     longest_trip_stops = defaultdict(lambda: defaultdict(list))
 
-    print("A abrir base de dados oficial...")
+    print("A processar a base de dados oficial GTFS...")
     try:
         with zipfile.ZipFile(ZIP_FILE, "r") as z:
+            # 1. Ler Estações
             with z.open("stops.txt") as f:
                 reader = csv.DictReader(f.read().decode('utf-8-sig').splitlines())
                 for row in reader:
                     stops[row["stop_id"]] = row["stop_name"].strip()
                     metro_data["stations"].add(stops[row["stop_id"]])
 
+            # 2. Ler Linhas
             with z.open("routes.txt") as f:
                 reader = csv.DictReader(f.read().decode('utf-8-sig').splitlines())
                 for row in reader:
                     routes[row["route_id"]] = row["route_short_name"].upper()
 
+            # 3. Ler Dias da Semana vs Fim de Semana
             with z.open("calendar.txt") as f:
                 reader = csv.DictReader(f.read().decode('utf-8-sig').splitlines())
                 for row in reader:
                     services[row["service_id"]] = "weekends" if (row["saturday"] == "1" or row["sunday"] == "1") else "weekdays"
 
+            # 4. Ler Viagens
             with z.open("trips.txt") as f:
                 reader = csv.DictReader(f.read().decode('utf-8-sig').splitlines())
                 for row in reader:
@@ -56,6 +61,7 @@ def process_gtfs():
                             "service_type": services.get(row["service_id"], "weekdays")
                         }
 
+            # 5. Ler Horários Exatos
             with z.open("stop_times.txt") as f:
                 reader = csv.DictReader(f.read().decode('utf-8-sig').splitlines())
                 for row in reader:
@@ -64,6 +70,8 @@ def process_gtfs():
                         trip = trips[t_id]
                         stop_name = stops[row["stop_id"]]
                         t_str = row["departure_time"]
+                        
+                        # Tratar horas pós-meia-noite (ex: 24:15, 25:30)
                         h, m, _ = t_str.split(':')
                         if int(h) >= 24: h = str(int(h) - 24).zfill(2)
                         clean_time = f"{h.zfill(2)}:{m}"
@@ -72,9 +80,10 @@ def process_gtfs():
                         trip_stops[t_id].append((int(row["stop_sequence"]), stop_name, t_str))
 
     except Exception as e:
-        print(f"Erro: {e}")
+        print(f"Erro ao processar ficheiros: {e}")
         return
 
+    # Encontrar as sequências completas de cada linha
     for t_id, s_list in trip_stops.items():
         trip = trips[t_id]
         rn, d_id = trip["route_name"], trip["direction_id"]
@@ -84,6 +93,7 @@ def process_gtfs():
 
     metro_data["stations"] = sorted(list(metro_data["stations"]))
     
+    # Construir o JSON final
     for rn in sorted(longest_trip_stops.keys()):
         dir_0_data = longest_trip_stops[rn].get("0", [])
         dir_1_data = longest_trip_stops[rn].get("1", [])
@@ -103,6 +113,7 @@ def process_gtfs():
             "departures_reverse": {}
         }
 
+        # Limpar duplicados e ordenar os horários para cada estação
         for station in dir_0_seq:
             route_obj["departures"][station] = {
                 "weekdays": sorted(list(set(timetable[rn]["0"][station]["weekdays"]))),
@@ -115,9 +126,11 @@ def process_gtfs():
             }
         metro_data["routes"].append(route_obj)
 
+    os.makedirs(os.path.dirname(OUTPUT_JSON), exist_ok=True)
     with open(OUTPUT_JSON, "w", encoding="utf-8") as f:
         json.dump(metro_data, f, indent=4, ensure_ascii=False)
-    print(f"✓ Todas as linhas processadas em {OUTPUT_JSON}")
+        
+    print(f"✓ Sucesso! Base de dados gerada com todas as linhas em {OUTPUT_JSON}")
 
 if __name__ == "__main__":
     process_gtfs()
