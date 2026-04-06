@@ -23,27 +23,45 @@ function App() {
   const favoriteStations = stations.filter(s => favorites.includes(s));
   const otherStations = stations.filter(s => !favorites.includes(s));
 
+  // O "Motor" Corrigido: Avalia todas as linhas que passam no percurso e escolhe a mais rápida
   const getTrip = (start, end, time, dayType) => {
+    let bestOption = null;
+
     for (const route of metroData.routes) {
       const seq = route.stations_sequence;
+      
       if (seq.includes(start) && seq.includes(end)) {
-        const startIdx = seq.indexOf(start), endIdx = seq.indexOf(end);
+        const startIdx = seq.indexOf(start);
+        const endIdx = seq.indexOf(end);
         const isRev = startIdx > endIdx;
-        const departures = (isRev ? route.departures_reverse : route.departures)[start][dayType];
         
-        let next = null;
+        const departuresData = isRev ? route.departures_reverse : route.departures;
+        if (!departuresData[start] || !departuresData[start][dayType]) continue;
+        
+        const departures = departuresData[start][dayType];
+        
         for (const dep of departures) {
           const [h, m] = dep.split(':').map(Number);
-          const d = new Date(time); d.setHours(h, m, 0, 0);
-          if (d >= time && (!next || d < next)) next = d;
-        }
-        if (next) {
-          const duration = Math.abs(route.travel_times_from_start[endIdx] - route.travel_times_from_start[startIdx]);
-          return { line: route.line, dep: next, arr: new Date(next.getTime() + duration * 60000), dur: duration, dir: isRev ? route.direction_reverse : route.direction };
+          const d = new Date(time); 
+          d.setHours(h, m, 0, 0);
+          
+          if (d >= time) {
+            if (!bestOption || d < bestOption.dep) {
+              const duration = Math.abs(route.travel_times_from_start[endIdx] - route.travel_times_from_start[startIdx]);
+              bestOption = { 
+                line: route.line, 
+                dep: d, 
+                arr: new Date(d.getTime() + duration * 60000), 
+                dur: duration, 
+                dir: isRev ? route.direction_reverse : route.direction 
+              };
+            }
+            break; // Avança para testar a próxima linha
+          }
         }
       }
     }
-    return null;
+    return bestOption;
   };
 
   const handleSearch = (e) => {
@@ -52,18 +70,23 @@ function App() {
     const time = new Date(datetime);
     const dayType = (time.getDay() === 0 || time.getDay() === 6) ? "weekends" : "weekdays";
 
-    // 1. Direta
+    // 1. Tentar Viagem Direta
     const direct = getTrip(origin, destination, time, dayType);
     if (direct) return setResult({ type: 'direta', ...direct });
 
-    // 2. Transbordo (Procura estação comum)
+    // 2. Tentar Transbordo
     for (const routeO of metroData.routes.filter(r => r.stations_sequence.includes(origin))) {
       for (const routeD of metroData.routes.filter(r => r.stations_sequence.includes(destination))) {
+        if (routeO.line === routeD.line) continue; // Impede sugerir transbordo para a mesma linha
+        
         const common = routeO.stations_sequence.filter(s => routeD.stations_sequence.includes(s));
         for (const station of common) {
+          if (station === origin || station === destination) continue;
+
           const leg1 = getTrip(origin, station, time, dayType);
           if (leg1) {
-            const leg2 = getTrip(station, destination, new Date(leg1.arr.getTime() + 180000), dayType); // +3 min troca
+            const leg2Time = new Date(leg1.arr.getTime() + 180000); // 3 minutos de margem para trocar de linha
+            const leg2 = getTrip(station, destination, leg2Time, dayType);
             if (leg2) return setResult({ type: 'transbordo', leg1, leg2, station });
           }
         }
@@ -77,7 +100,7 @@ function App() {
   return (
     <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4 font-sans">
       <div className="bg-white p-8 rounded-2xl shadow-xl w-full max-w-md border border-gray-100">
-        <h1 className="text-2xl font-bold text-blue-600 mb-6 text-center">Metro do Porto <span className="text-xs font-normal text-gray-400">GTFS Live</span></h1>
+        <h1 className="text-2xl font-bold text-blue-600 mb-6 text-center">Metro do Porto <span className="text-xs font-normal text-gray-400">Dados Oficiais</span></h1>
         
         <form onSubmit={handleSearch} className="space-y-4">
           {[["Origem", origin, setOrigin], ["Destino", destination, setDestination]].map(([label, val, set]) => (
@@ -96,7 +119,7 @@ function App() {
             </div>
           ))}
           <input type="datetime-local" className="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl" value={datetime} onChange={e => setDatetime(e.target.value)} required />
-          <button className="w-full py-4 bg-blue-600 text-white rounded-xl font-bold hover:bg-blue-700 shadow-lg shadow-blue-200 transition-all">Ver Próxima Viagem</button>
+          <button className="w-full py-4 bg-blue-600 text-white rounded-xl font-bold hover:bg-blue-700 shadow-lg shadow-blue-200 transition-all">Pesquisar Viagem</button>
         </form>
 
         {error && <div className="mt-4 p-3 bg-red-50 text-red-600 rounded-xl text-center text-sm">{error}</div>}
@@ -104,17 +127,27 @@ function App() {
         {result && (
           <div className="mt-6 space-y-3">
             {result.type === 'direta' ? (
-              <div className="p-4 bg-blue-50 border border-blue-100 rounded-2xl">
-                <div className="flex justify-between text-xs font-bold text-blue-500 mb-2"><span>Linha {result.line}</span><span>Sentido {result.dir}</span></div>
+              <div className="p-5 bg-blue-50 border border-blue-100 rounded-2xl relative">
+                 <div className="absolute -top-3 right-4">
+                   <span className="bg-green-100 text-green-800 text-xs font-bold px-3 py-1 rounded-full border border-green-300 shadow-sm">Ligação Direta</span>
+                 </div>
+                <div className="flex justify-between text-xs font-bold text-blue-500 mb-2 mt-2"><span>Linha {result.line}</span><span>Sentido {result.dir}</span></div>
                 <div className="flex justify-between items-center"><span className="text-2xl font-black">{fmt(result.dep)}</span><div className="h-px flex-1 mx-4 bg-blue-200"></div><span className="text-2xl font-black">{fmt(result.arr)}</span></div>
-                <div className="text-center text-xs text-blue-400 mt-2">Duração: {result.dur} min</div>
+                <div className="text-center text-xs text-blue-400 mt-2 font-semibold">Duração Estimada: {result.dur} min</div>
               </div>
             ) : (
-              <div className="space-y-2">
+              <div className="space-y-2 relative pt-3">
+                <div className="absolute top-0 right-4">
+                   <span className="bg-purple-100 text-purple-800 text-xs font-bold px-3 py-1 rounded-full border border-purple-300 shadow-sm">Requer Transbordo</span>
+                </div>
                 {[result.leg1, result.leg2].map((l, i) => (
                   <div key={i} className={`p-4 border rounded-2xl ${i===0?'bg-blue-50 border-blue-100':'bg-purple-50 border-purple-100'}`}>
-                    <div className="text-[10px] font-bold uppercase opacity-50 mb-1">{i===0?'Partida':'Troca na '+result.station}</div>
-                    <div className="flex justify-between text-xs font-bold mb-1"><span>Linha {l.line}</span><span>{fmt(l.dep)} ➔ {fmt(l.arr)}</span></div>
+                    <div className="text-[10px] font-bold uppercase opacity-50 mb-1">{i===0 ? '1ª Viagem' : '2ª Viagem (Trocar em ' + result.station + ')'}</div>
+                    <div className="flex justify-between text-xs font-bold mb-1"><span>Linha {l.line}</span><span>Sentido {l.dir}</span></div>
+                    <div className="flex justify-between items-center mt-2">
+                       <span className="text-lg font-black">{fmt(l.dep)}</span>
+                       <span className="text-lg font-black text-gray-700">{fmt(l.arr)}</span>
+                    </div>
                   </div>
                 ))}
               </div>
