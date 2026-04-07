@@ -7,20 +7,12 @@ const StarFilled = () => <svg xmlns="http://www.w3.org/2000/svg" className="h-6 
 const StarOutline = () => <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-gray-300 hover:text-yellow-400 transition" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z" /></svg>;
 
 const getLineColor = (line) => {
-  const colors = {
-    A: '#00AEEF', // Azul Oficial
-    B: '#E20613', // Vermelho
-    C: '#8FC743', // Verde
-    D: '#FDB913', // Amarelo
-    E: '#7A4B94', // Violeta
-    F: '#F58220'  // Laranja
-  };
+  const colors = { A: '#00AEEF', B: '#E20613', C: '#8FC743', D: '#FDB913', E: '#7A4B94', F: '#F58220' };
   return colors[line] || '#9CA3AF';
 };
 
 const BRAND_BLUE = '#00AEEF';
 
-// Elemento Gráfico Oficial do PDF: Círculo com a letra
 const LineBadge = ({ line, size = "md" }) => {
   const dims = size === "sm" ? "w-5 h-5 text-[10px]" : size === "lg" ? "w-8 h-8 text-sm" : "w-6 h-6 text-xs";
   return (
@@ -62,48 +54,6 @@ function App() {
     setResult(null);
   };
 
-  const getTrip = (start, end, time, dayType) => {
-    let bestOption = null;
-
-    for (const route of metroData.routes) {
-      const seq = route.stations_sequence;
-      if (seq.includes(start) && seq.includes(end)) {
-        const startIdx = seq.indexOf(start);
-        const endIdx = seq.indexOf(end);
-        const isRev = startIdx > endIdx;
-        const departuresData = isRev ? route.departures_reverse : route.departures;
-        if (!departuresData[start] || !departuresData[start][dayType]) continue;
-        
-        const departures = departuresData[start][dayType];
-        
-        for (const dep of departures) {
-          const parts = dep.split(':');
-          const d = new Date(time); 
-          d.setHours(parseInt(parts[0], 10), parseInt(parts[1], 10), 0, 0);
-          
-          if (d >= time) {
-            if (!bestOption || d < bestOption.dep) {
-              const duration = Math.abs(route.travel_times_from_start[endIdx] - route.travel_times_from_start[startIdx]);
-              const pathList = [];
-              const loopStep = isRev ? -1 : 1;
-              for(let i = startIdx; (isRev ? i >= endIdx : i <= endIdx); i += loopStep) {
-                 const timeDiff = Math.abs(route.travel_times_from_start[i] - route.travel_times_from_start[startIdx]);
-                 pathList.push({ name: seq[i], time: new Date(d.getTime() + timeDiff * 60000), line: route.line });
-              }
-
-              bestOption = { 
-                line: route.line, dep: d, arr: new Date(d.getTime() + duration * 60000), 
-                dur: duration, dir: isRev ? route.direction_reverse : route.direction, path: pathList
-              };
-            }
-            break; 
-          }
-        }
-      }
-    }
-    return bestOption;
-  };
-
   const handleSearch = (e) => {
     e.preventDefault();
     setError(''); setResult(null);
@@ -113,51 +63,103 @@ function App() {
     const time = new Date(datetime);
     const dayType = (time.getDay() === 0 || time.getDay() === 6) ? "weekends" : "weekdays";
 
-    const direct = getTrip(origin, destination, time, dayType);
-    if (direct) {
-      return setResult({ type: 'direta', line: direct.line, dep: direct.dep, arr: direct.arr, dur: direct.dur, dir: direct.dir, path: direct.path });
-    }
-
-    let bestTransfer = null;
-
-    for (const routeO of metroData.routes.filter(r => r.stations_sequence.includes(origin))) {
-      for (const routeD of metroData.routes.filter(r => r.stations_sequence.includes(destination))) {
-        if (routeO.line === routeD.line) continue; 
-        
-        const common = routeO.stations_sequence.filter(s => routeD.stations_sequence.includes(s));
-        for (const station of common) {
-          if (station === origin || station === destination) continue;
-
-          const leg1 = getTrip(origin, station, time, dayType);
-          if (leg1) {
-            const leg2Time = new Date(leg1.arr.getTime() + 180000); 
-            const leg2 = getTrip(station, destination, leg2Time, dayType);
+    // Sub-função: Puxa TODAS as viagens diretas disponíveis em vez de parar na primeira
+    const getAllDirectTrips = (start, end, searchTime) => {
+        const trips = [];
+        for (const route of metroData.routes) {
+            const seq = route.stations_sequence;
+            const startIdx = seq.indexOf(start);
+            const endIdx = seq.indexOf(end);
             
-            if (leg2) {
-              const totalArr = leg2.arr;
-              let isBetter = false;
-              if (!bestTransfer) isBetter = true;
-              else if (totalArr < bestTransfer.arr) isBetter = true;
-              else if (totalArr.getTime() === bestTransfer.arr.getTime() && leg1.arr < bestTransfer.leg1.arr) isBetter = true;
-              
-              if (isBetter) {
+            if (startIdx !== -1 && endIdx !== -1 && startIdx < endIdx) {
+                const departures = route.departures[start][dayType];
+                if (!departures) continue;
+                
+                for (const dep of departures) {
+                    const parts = dep.split(':');
+                    const d = new Date(searchTime); 
+                    d.setHours(parseInt(parts[0], 10), parseInt(parts[1], 10), 0, 0);
+                    
+                    if (d >= searchTime) {
+                        const duration = route.travel_times_from_start[endIdx] - route.travel_times_from_start[startIdx];
+                        const pathList = [];
+                        for(let i = startIdx; i <= endIdx; i++) {
+                           const timeDiff = route.travel_times_from_start[i] - route.travel_times_from_start[startIdx];
+                           pathList.push({ name: seq[i], time: new Date(d.getTime() + timeDiff * 60000), line: route.line });
+                        }
+                        trips.push({ 
+                            type: 'direta', line: route.line, dep: d, 
+                            arr: new Date(d.getTime() + duration * 60000), 
+                            dur: duration, dir: route.direction, path: pathList
+                        });
+                        break; // Guarda a primeira disponível desta linha específica
+                    }
+                }
+            }
+        }
+        return trips;
+    };
+
+    const directTrips = getAllDirectTrips(origin, destination, time);
+    const transferTrips = [];
+
+    // Lógica para Transbordos
+    for (const routeO of metroData.routes) {
+        if (!routeO.stations_sequence.includes(origin)) continue;
+        
+        for (const routeD of metroData.routes) {
+            if (routeO.line === routeD.line) continue; 
+            if (!routeD.stations_sequence.includes(destination)) continue;
+            
+            const common = routeO.stations_sequence.filter(s => routeD.stations_sequence.includes(s));
+            for (const station of common) {
+                if (station === origin || station === destination) continue;
+
+                const leg1Trips = getAllDirectTrips(origin, station, time);
+                if (leg1Trips.length === 0) continue;
+                leg1Trips.sort((a, b) => a.arr - b.arr); // Queremos chegar rápido ao transbordo
+                const leg1 = leg1Trips[0];
+
+                const leg2Time = new Date(leg1.arr.getTime() + 180000); // 3 mins troca
+                const leg2Trips = getAllDirectTrips(station, destination, leg2Time);
+                if (leg2Trips.length === 0) continue;
+                leg2Trips.sort((a, b) => a.arr - b.arr);
+                const leg2 = leg2Trips[0];
+                
                 const fullPath = [];
                 leg1.path.forEach((step, idx) => {
-                   if (idx === leg1.path.length - 1) fullPath.push({ name: station, timeArrival: step.time, timeDeparture: leg2.path[0].time, type: 'transfer', line1: leg1.line, line2: leg2.line, dir2: leg2.dir });
-                   else fullPath.push(step);
+                   if (idx === leg1.path.length - 1) {
+                       fullPath.push({ name: station, timeArrival: step.time, timeDeparture: leg2.path[0].time, type: 'transfer', line1: leg1.line, line2: leg2.line, dir2: leg2.dir });
+                   } else fullPath.push(step);
                 });
                 leg2.path.slice(1).forEach(step => fullPath.push(step));
 
-                bestTransfer = { type: 'transbordo', firstLine: leg1.line, finalLine: leg2.line, leg1: leg1, dep: leg1.dep, arr: leg2.arr, dur: Math.round((leg2.arr - leg1.dep) / 60000), path: fullPath };
-              }
+                transferTrips.push({ 
+                    type: 'transbordo', firstLine: leg1.line, finalLine: leg2.line, 
+                    dep: leg1.dep, arr: leg2.arr, dur: Math.round((leg2.arr - leg1.dep) / 60000), path: fullPath 
+                });
             }
-          }
         }
-      }
     }
 
-    if (bestTransfer) return setResult(bestTransfer);
-    setError('Rota não encontrada para os dados selecionados.');
+    const allTrips = [...directTrips, ...transferTrips];
+    if (allTrips.length === 0) return setError('Rota não encontrada para os dados selecionados.');
+
+    // O CÉREBRO: Decide qual é a melhor viagem global
+    allTrips.sort((a, b) => {
+        // 1º Regra: A que chega mais cedo ao destino final ganha!
+        if (a.arr.getTime() !== b.arr.getTime()) {
+            return a.arr - b.arr; 
+        }
+        // 2º Regra: Se chegam as duas à mesma hora, a VIAGEM DIRETA ganha.
+        if (a.type === 'direta' && b.type !== 'direta') return -1;
+        if (b.type === 'direta' && a.type !== 'direta') return 1;
+        
+        // 3º Regra: Se ainda assim forem iguais, escolhe a que te permite SAIR MAIS TARDE de casa (menos espera inútil)
+        return b.dep - a.dep; 
+    });
+
+    setResult(allTrips[0]); // Apresenta o vencedor absoluto
   };
 
   const fmt = (d) => d.toLocaleTimeString('pt-PT', { hour: '2-digit', minute: '2-digit' });
@@ -166,7 +168,6 @@ function App() {
     <div className="min-h-screen bg-[#F0F2F5] flex items-start sm:items-center justify-center sm:p-4 font-sans text-gray-900">
       <div className="bg-white sm:rounded-xl shadow-none sm:shadow-2xl w-full max-w-md min-h-screen sm:min-h-[85vh] overflow-hidden flex flex-col relative border border-gray-200">
         
-        {/* HEADER INSTITUCIONAL (Estilo PDF) */}
         <div className="pt-10 pb-6 px-6 shrink-0 relative z-10 border-b-[4px]" style={{borderColor: BRAND_BLUE}}>
            <div className="flex items-center justify-between">
               <div>
@@ -181,8 +182,6 @@ function App() {
         
         <div className="px-6 pb-6 pt-6 shrink-0 z-20 bg-white">
           <form onSubmit={handleSearch} className="space-y-4">
-            
-            {/* FORMULÁRIO */}
             <div className="bg-white rounded-lg p-1 relative border-2 border-gray-100 shadow-sm">
                 <button type="button" onClick={swapStations} className="absolute right-6 top-1/2 -translate-y-1/2 w-10 h-10 bg-white rounded-full shadow-md flex items-center justify-center hover:bg-gray-50 transition-colors z-10 border border-gray-100">
                     <IconSwap />
@@ -226,14 +225,12 @@ function App() {
           {error && <div className="mt-4 p-4 bg-red-50 text-red-700 font-bold rounded-lg text-center text-sm border border-red-100">{error}</div>}
         </div>
 
-        {/* ÁREA DE RESULTADOS */}
         {result && (
           <div className="flex-1 bg-white border-t-4 border-gray-100 overflow-y-auto pb-10">
             
             <div className="sticky top-0 bg-white/95 backdrop-blur-md px-6 py-5 border-b border-gray-100 z-10 shadow-sm">
                <div className="flex justify-between items-end">
                   <div>
-                     {/* Círculos com as Letras (Estilo PDF) */}
                      <div className="flex items-center gap-1.5 mb-3">
                         {result.type === 'transbordo' ? (
                            <>
