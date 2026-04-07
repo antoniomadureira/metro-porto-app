@@ -143,14 +143,27 @@ function App() {
 
           const leg1 = getTrip(origin, station, time, dayType);
           if (leg1) {
-            const leg2Time = new Date(leg1.arr.getTime() + 180000); 
+            const leg2Time = new Date(leg1.arr.getTime() + 180000); // 3 mins de transbordo
             const leg2 = getTrip(station, destination, leg2Time, dayType);
             
             if (leg2) {
               const totalArr = leg2.arr;
               
-              if (!bestTransfer || totalArr < bestTransfer.arr) {
-                
+              // LÓGICA DE DESEMPATE INTELIGENTE
+              let isBetter = false;
+              if (!bestTransfer) {
+                  isBetter = true;
+              } else if (totalArr < bestTransfer.arr) {
+                  // Se a viagem final chegar mais cedo
+                  isBetter = true;
+              } else if (totalArr.getTime() === bestTransfer.arr.getTime()) {
+                  // Se o tempo de chegada for igual, escolhe o transbordo que acontece MAIS CEDO (ex: Senhora da Hora em vez de Campanhã)
+                  if (leg1.arr < bestTransfer.leg1.arr) {
+                      isBetter = true;
+                  }
+              }
+              
+              if (isBetter) {
                 const fullPath = [];
                 leg1.path.forEach((step, idx) => {
                    if (idx === leg1.path.length - 1) {
@@ -176,6 +189,7 @@ function App() {
                   type: 'transbordo', 
                   firstLine: leg1.line,
                   finalLine: leg2.line,
+                  leg1: leg1,
                   dep: leg1.dep,
                   arr: leg2.arr,
                   dur: Math.round((leg2.arr - leg1.dep) / 60000),
@@ -258,7 +272,6 @@ function App() {
             <div className="sticky top-0 bg-white/95 backdrop-blur-md px-6 py-5 border-b border-gray-100 z-10 shadow-sm">
                <div className="flex justify-between items-end">
                   <div>
-                     {/* CABEÇALHO CORRIGIDO: Mostra as duas linhas se for transbordo */}
                      <div className="flex items-center gap-2 mb-2">
                         {result.type === 'transbordo' ? (
                            <>
@@ -329,7 +342,6 @@ function App() {
                            {fmt(step.time)}
                         </div>
                         
-                        {/* ESTRUTURA FLEX PARA A LINHA NÃO QUEBRAR E ASSUMIR A COR CERTA */}
                         <div className="flex flex-col items-center w-4">
                            <div className={`rounded-full z-10 shrink-0 ${isImportant ? 'w-3.5 h-3.5 border-[3px] bg-white mt-1' : 'w-2 h-2 mt-2'}`} 
                                 style={{ backgroundColor: isImportant ? 'white' : color, borderColor: color }}>
