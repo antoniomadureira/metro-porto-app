@@ -56,44 +56,68 @@ function App() {
 
   const handleSearch = (e) => {
     e.preventDefault();
-    setError(''); setResult(null);
+    setError(''); 
+    setResult(null);
 
     if (origin === destination) return setError('A origem e o destino têm de ser diferentes.');
 
     const time = new Date(datetime);
-    const dayType = (time.getDay() === 0 || time.getDay() === 6) ? "weekends" : "weekdays";
 
-    // Sub-função: Puxa TODAS as viagens diretas disponíveis em vez de parar na primeira
+    // Motor de Busca Otimizado - Mapeamento absoluto de Datas
     const getAllDirectTrips = (start, end, searchTime) => {
         const trips = [];
+        const targetDayType = (searchTime.getDay() === 0 || searchTime.getDay() === 6) ? "weekends" : "weekdays";
+
         for (const route of metroData.routes) {
             const seq = route.stations_sequence;
             const startIdx = seq.indexOf(start);
             const endIdx = seq.indexOf(end);
             
             if (startIdx !== -1 && endIdx !== -1 && startIdx < endIdx) {
-                const departures = route.departures[start][dayType];
-                if (!departures) continue;
+                let departures = route.departures[start][targetDayType];
+                
+                if (!departures || departures.length === 0) {
+                    const fallbackType = targetDayType === "weekdays" ? "weekends" : "weekdays";
+                    departures = route.departures[start][fallbackType];
+                }
+                
+                if (!departures || departures.length === 0) continue;
+                
+                let bestDate = null;
                 
                 for (const dep of departures) {
-                    const parts = dep.split(':');
-                    const d = new Date(searchTime); 
-                    d.setHours(parseInt(parts[0], 10), parseInt(parts[1], 10), 0, 0);
+                    const [h, m] = dep.split(':').map(Number);
                     
-                    if (d >= searchTime) {
-                        const duration = route.travel_times_from_start[endIdx] - route.travel_times_from_start[startIdx];
-                        const pathList = [];
-                        for(let i = startIdx; i <= endIdx; i++) {
-                           const timeDiff = route.travel_times_from_start[i] - route.travel_times_from_start[startIdx];
-                           pathList.push({ name: seq[i], time: new Date(d.getTime() + timeDiff * 60000), line: route.line });
+                    const dToday = new Date(searchTime);
+                    dToday.setHours(h, m, 0, 0);
+                    
+                    const dTomorrow = new Date(searchTime);
+                    dTomorrow.setDate(dTomorrow.getDate() + 1);
+                    dTomorrow.setHours(h, m, 0, 0);
+                    
+                    const candidates = [];
+                    if (dToday >= searchTime) candidates.push(dToday);
+                    if (dTomorrow >= searchTime) candidates.push(dTomorrow);
+                    
+                    for (const c of candidates) {
+                        if (!bestDate || c < bestDate) {
+                            bestDate = c;
                         }
-                        trips.push({ 
-                            type: 'direta', line: route.line, dep: d, 
-                            arr: new Date(d.getTime() + duration * 60000), 
-                            dur: duration, dir: route.direction, path: pathList
-                        });
-                        break; // Guarda a primeira disponível desta linha específica
                     }
+                }
+                
+                if (bestDate) {
+                    const duration = route.travel_times_from_start[endIdx] - route.travel_times_from_start[startIdx];
+                    const pathList = [];
+                    for(let i = startIdx; i <= endIdx; i++) {
+                       const timeDiff = route.travel_times_from_start[i] - route.travel_times_from_start[startIdx];
+                       pathList.push({ name: seq[i], time: new Date(bestDate.getTime() + timeDiff * 60000), line: route.line });
+                    }
+                    trips.push({ 
+                        type: 'direta', line: route.line, dep: bestDate, 
+                        arr: new Date(bestDate.getTime() + duration * 60000), 
+                        dur: duration, dir: route.direction, path: pathList
+                    });
                 }
             }
         }
@@ -103,24 +127,23 @@ function App() {
     const directTrips = getAllDirectTrips(origin, destination, time);
     const transferTrips = [];
 
-    // Lógica para Transbordos
+    // Gerador de Transbordos Combinados
     for (const routeO of metroData.routes) {
         if (!routeO.stations_sequence.includes(origin)) continue;
-        
         for (const routeD of metroData.routes) {
             if (routeO.line === routeD.line) continue; 
             if (!routeD.stations_sequence.includes(destination)) continue;
-            
+
             const common = routeO.stations_sequence.filter(s => routeD.stations_sequence.includes(s));
             for (const station of common) {
                 if (station === origin || station === destination) continue;
 
                 const leg1Trips = getAllDirectTrips(origin, station, time);
                 if (leg1Trips.length === 0) continue;
-                leg1Trips.sort((a, b) => a.arr - b.arr); // Queremos chegar rápido ao transbordo
+                leg1Trips.sort((a, b) => a.arr - b.arr); 
                 const leg1 = leg1Trips[0];
 
-                const leg2Time = new Date(leg1.arr.getTime() + 180000); // 3 mins troca
+                const leg2Time = new Date(leg1.arr.getTime() + 180000); // margem de 3 minutos para transbordo na estação
                 const leg2Trips = getAllDirectTrips(station, destination, leg2Time);
                 if (leg2Trips.length === 0) continue;
                 leg2Trips.sort((a, b) => a.arr - b.arr);
@@ -143,23 +166,20 @@ function App() {
     }
 
     const allTrips = [...directTrips, ...transferTrips];
-    if (allTrips.length === 0) return setError('Rota não encontrada para os dados selecionados.');
+    
+    if (allTrips.length === 0) {
+        return setError('Rota não encontrada para os dados selecionados.');
+    }
 
-    // O CÉREBRO: Decide qual é a melhor viagem global
+    // Regras de Otimização e Desempate (Prioriza tempo de chegada e partida mais tardia)
     allTrips.sort((a, b) => {
-        // 1º Regra: A que chega mais cedo ao destino final ganha!
-        if (a.arr.getTime() !== b.arr.getTime()) {
-            return a.arr - b.arr; 
-        }
-        // 2º Regra: Se chegam as duas à mesma hora, a VIAGEM DIRETA ganha.
+        if (a.arr.getTime() !== b.arr.getTime()) return a.arr - b.arr; 
         if (a.type === 'direta' && b.type !== 'direta') return -1;
         if (b.type === 'direta' && a.type !== 'direta') return 1;
-        
-        // 3º Regra: Se ainda assim forem iguais, escolhe a que te permite SAIR MAIS TARDE de casa (menos espera inútil)
         return b.dep - a.dep; 
     });
 
-    setResult(allTrips[0]); // Apresenta o vencedor absoluto
+    setResult(allTrips[0]);
   };
 
   const fmt = (d) => d.toLocaleTimeString('pt-PT', { hour: '2-digit', minute: '2-digit' });
@@ -182,6 +202,7 @@ function App() {
         
         <div className="px-6 pb-6 pt-6 shrink-0 z-20 bg-white">
           <form onSubmit={handleSearch} className="space-y-4">
+            
             <div className="bg-white rounded-lg p-1 relative border-2 border-gray-100 shadow-sm">
                 <button type="button" onClick={swapStations} className="absolute right-6 top-1/2 -translate-y-1/2 w-10 h-10 bg-white rounded-full shadow-md flex items-center justify-center hover:bg-gray-50 transition-colors z-10 border border-gray-100">
                     <IconSwap />
