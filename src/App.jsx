@@ -1,8 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import metroData from './data/timetables.json';
 
+// Ícones SVG minimalistas
+const IconSwap = () => <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-gray-400 rotate-90" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" /></svg>;
+const IconClock = () => <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>;
 const StarFilled = () => <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-yellow-500" viewBox="0 0 20 20" fill="currentColor"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" /></svg>;
-const StarOutline = () => <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-gray-400 hover:text-yellow-500 transition" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z" /></svg>;
+const StarOutline = () => <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-gray-300 hover:text-yellow-500 transition" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z" /></svg>;
 
 const getLineColor = (line) => {
   const colors = {
@@ -40,6 +43,14 @@ function App() {
   const stations = metroData.stations || [];
   const favoriteStations = stations.filter(s => favorites.includes(s));
   const otherStations = stations.filter(s => !favorites.includes(s));
+
+  // Função para inverter estações
+  const swapStations = () => {
+    const temp = origin;
+    setOrigin(destination);
+    setDestination(temp);
+    setResult(null);
+  };
 
   const getTrip = (start, end, time, dayType) => {
     let bestOption = null;
@@ -98,10 +109,14 @@ function App() {
     e.preventDefault();
     setError(''); 
     setResult(null);
+
+    if (origin === destination) {
+        return setError('A origem e o destino têm de ser diferentes.');
+    }
+
     const time = new Date(datetime);
     const dayType = (time.getDay() === 0 || time.getDay() === 6) ? "weekends" : "weekdays";
 
-    // 1. Tentar Direta
     const direct = getTrip(origin, destination, time, dayType);
     if (direct) {
       return setResult({ 
@@ -116,7 +131,6 @@ function App() {
       });
     }
 
-    // 2. Tentar Transbordo INTELIGENTE
     let bestTransfer = null;
 
     for (const routeO of metroData.routes.filter(r => r.stations_sequence.includes(origin))) {
@@ -125,19 +139,17 @@ function App() {
         
         const common = routeO.stations_sequence.filter(s => routeD.stations_sequence.includes(s));
         
-        // Avalia TODAS as estações comuns em vez de parar na primeira
         for (const station of common) {
           if (station === origin || station === destination) continue;
 
           const leg1 = getTrip(origin, station, time, dayType);
           if (leg1) {
-            const leg2Time = new Date(leg1.arr.getTime() + 180000); // Dá 3 min para andar na estação
+            const leg2Time = new Date(leg1.arr.getTime() + 180000); 
             const leg2 = getTrip(station, destination, leg2Time, dayType);
             
             if (leg2) {
               const totalArr = leg2.arr;
               
-              // Se ainda não temos opção, ou se esta opção chega mais cedo que a anterior, guardamos
               if (!bestTransfer || totalArr < bestTransfer.arr) {
                 
                 const fullPath = [];
@@ -176,151 +188,167 @@ function App() {
       }
     }
 
-    // Só devolve o resultado depois de testar todas as hipóteses
     if (bestTransfer) {
       return setResult(bestTransfer);
     }
 
-    setError('Não foi possível encontrar uma rota para este trajeto e hora.');
+    setError('Rota não encontrada para esta hora.');
   };
 
   const fmt = (d) => d.toLocaleTimeString('pt-PT', { hour: '2-digit', minute: '2-digit' });
 
   return (
-    <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4 font-sans">
-      <div className="bg-white rounded-3xl shadow-2xl w-full max-w-md overflow-hidden border border-gray-100">
+    <div className="min-h-screen bg-[#F2F2F7] flex items-start sm:items-center justify-center sm:p-4 font-sans text-gray-900">
+      <div className="bg-white sm:rounded-[2.5rem] shadow-none sm:shadow-2xl w-full max-w-md min-h-screen sm:min-h-[85vh] overflow-hidden flex flex-col relative">
         
-        <div className="bg-gray-900 text-white p-6 pb-8 text-center relative">
-           <h1 className="text-xl font-black tracking-widest uppercase mb-1">Metro do Porto</h1>
-           <p className="text-xs text-gray-400">Horários Oficiais Live</p>
+        {/* HEADER */}
+        <div className="pt-12 pb-6 px-6 text-center shrink-0">
+           <h1 className="text-2xl font-black tracking-tight text-gray-900">Metro do Porto</h1>
+           <p className="text-sm text-gray-500 font-medium mt-1">Horários em Tempo Real</p>
         </div>
         
-        <div className="p-6 -mt-4 bg-white rounded-t-2xl relative z-10">
+        {/* FORMULÁRIO (ESTILO CARD) */}
+        <div className="px-6 pb-6 shrink-0 z-20">
           <form onSubmit={handleSearch} className="space-y-4">
             
-            <div>
-              <label className="text-xs font-bold text-gray-400 uppercase tracking-wider ml-1">Origem</label>
-              <div className="flex gap-2 mt-1">
-                <select className="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl font-medium focus:ring-2 focus:ring-blue-500 outline-none transition-all" value={origin} onChange={e => setOrigin(e.target.value)} required>
-                  <option value="">Selecione a estação...</option>
-                  {favoriteStations.length > 0 && <optgroup label="Favoritos">{favoriteStations.map(s => <option key={s} value={s}>{s}</option>)}</optgroup>}
-                  <optgroup label="Estações">{otherStations.map(s => <option key={s} value={s}>{s}</option>)}</optgroup>
-                </select>
-                <button type="button" onClick={() => setFavorites(f => f.includes(origin) ? f.filter(x => x !== origin) : [...f, origin])} className="p-3 bg-gray-50 rounded-xl border border-gray-200 hover:bg-gray-100 transition">
-                  {favorites.includes(origin) ? <StarFilled /> : <StarOutline />}
+            <div className="bg-[#F2F2F7] rounded-3xl p-2 relative shadow-inner">
+                {/* Botão Swap */}
+                <button type="button" onClick={swapStations} className="absolute right-6 top-1/2 -translate-y-1/2 w-10 h-10 bg-white rounded-full shadow-md flex items-center justify-center hover:bg-gray-50 transition-colors z-10 border border-gray-100">
+                    <IconSwap />
                 </button>
-              </div>
+
+                {/* Input Origem */}
+                <div className="flex items-center px-4 py-3 border-b border-gray-200/60">
+                    <div className="w-3 h-3 rounded-full bg-gray-900 mr-3"></div>
+                    <select className="flex-1 bg-transparent font-semibold text-gray-900 outline-none appearance-none" value={origin} onChange={e => setOrigin(e.target.value)} required>
+                        <option value="" disabled className="text-gray-400">De onde partes?</option>
+                        {favoriteStations.length > 0 && <optgroup label="Favoritos">{favoriteStations.map(s => <option key={s} value={s}>{s}</option>)}</optgroup>}
+                        <optgroup label="Estações">{otherStations.map(s => <option key={s} value={s}>{s}</option>)}</optgroup>
+                    </select>
+                    <button type="button" onClick={() => setFavorites(f => f.includes(origin) ? f.filter(x => x !== origin) : [...f, origin])} className="pl-2">
+                        {origin && (favorites.includes(origin) ? <StarFilled /> : <StarOutline />)}
+                    </button>
+                </div>
+
+                {/* Input Destino */}
+                <div className="flex items-center px-4 py-3">
+                    <div className="w-3 h-3 rounded-full border-2 border-gray-900 mr-3"></div>
+                    <select className="flex-1 bg-transparent font-semibold text-gray-900 outline-none appearance-none" value={destination} onChange={e => setDestination(e.target.value)} required>
+                        <option value="" disabled className="text-gray-400">Para onde vais?</option>
+                        {favoriteStations.length > 0 && <optgroup label="Favoritos">{favoriteStations.map(s => <option key={s} value={s}>{s}</option>)}</optgroup>}
+                        <optgroup label="Estações">{otherStations.map(s => <option key={s} value={s}>{s}</option>)}</optgroup>
+                    </select>
+                    <button type="button" onClick={() => setFavorites(f => f.includes(destination) ? f.filter(x => x !== destination) : [...f, destination])} className="pl-2">
+                        {destination && (favorites.includes(destination) ? <StarFilled /> : <StarOutline />)}
+                    </button>
+                </div>
             </div>
 
-            <div>
-              <label className="text-xs font-bold text-gray-400 uppercase tracking-wider ml-1">Destino</label>
-              <div className="flex gap-2 mt-1">
-                <select className="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl font-medium focus:ring-2 focus:ring-blue-500 outline-none transition-all" value={destination} onChange={e => setDestination(e.target.value)} required>
-                  <option value="">Selecione a estação...</option>
-                  {favoriteStations.length > 0 && <optgroup label="Favoritos">{favoriteStations.map(s => <option key={s} value={s}>{s}</option>)}</optgroup>}
-                  <optgroup label="Estações">{otherStations.map(s => <option key={s} value={s}>{s}</option>)}</optgroup>
-                </select>
-                <button type="button" onClick={() => setFavorites(f => f.includes(destination) ? f.filter(x => x !== destination) : [...f, destination])} className="p-3 bg-gray-50 rounded-xl border border-gray-200 hover:bg-gray-100 transition">
-                  {favorites.includes(destination) ? <StarFilled /> : <StarOutline />}
-                </button>
-              </div>
+            {/* Input Data/Hora */}
+            <div className="bg-[#F2F2F7] rounded-2xl flex items-center px-6 py-4 shadow-inner">
+               <IconClock />
+               <input type="datetime-local" className="flex-1 ml-3 bg-transparent font-semibold text-gray-900 outline-none" value={datetime} onChange={e => setDatetime(e.target.value)} required />
             </div>
             
-            <div className="pt-2">
-               <label className="text-xs font-bold text-gray-400 uppercase tracking-wider ml-1">Partida a partir de</label>
-               <input type="datetime-local" className="w-full p-3 mt-1 bg-gray-50 border border-gray-200 rounded-xl font-medium outline-none focus:ring-2 focus:ring-blue-500" value={datetime} onChange={e => setDatetime(e.target.value)} required />
-            </div>
-            
-            <button className="w-full py-4 mt-2 bg-gray-900 text-white rounded-xl font-bold uppercase tracking-wide hover:bg-black transition-all">Pesquisar Viagem</button>
+            <button className="w-full py-4 mt-2 bg-gray-900 text-white rounded-2xl font-bold text-lg shadow-lg hover:bg-black active:scale-[0.98] transition-all">
+                Ver Viagem
+            </button>
           </form>
 
-          {error && <div className="mt-4 p-4 bg-red-50 text-red-600 font-medium rounded-xl text-center text-sm">{error}</div>}
+          {error && <div className="mt-4 p-4 bg-red-50 text-red-600 font-medium rounded-2xl text-center text-sm">{error}</div>}
         </div>
 
+        {/* ÁREA DE RESULTADOS (TIMELINE EXPANSIVA) */}
         {result && (
-          <div className="bg-gray-50 p-6 border-t border-gray-100">
+          <div className="flex-1 bg-white border-t border-gray-100 overflow-y-auto pb-10">
             
-            <div className="mb-6 flex flex-col">
-               <div className="flex justify-between items-center mb-1">
-                  <span className="text-sm font-bold text-gray-800">{origin}</span>
-                  <span className="text-xs font-bold text-gray-400 px-2">➔</span>
-                  <span className="text-sm font-bold text-gray-800">{destination}</span>
-               </div>
-               <div className="flex justify-between items-end mt-2">
-                  <div className="flex items-center gap-2">
-                     <span className="text-white text-xs font-black px-2 py-1 rounded shadow-sm" style={{backgroundColor: getLineColor(result.finalLine)}}>
-                        Linha {result.finalLine}
-                     </span>
-                     <span className="text-xs font-bold text-gray-500">{result.dur} min</span>
-                  </div>
-                  <div className="text-right">
-                     <span className="text-lg font-black text-gray-900">{fmt(result.dep)}</span>
-                     <span className="text-gray-400 font-bold mx-1">-</span>
-                     <span className="text-lg font-black text-gray-900">{fmt(result.arr)}</span>
+            {/* CABEÇALHO DO RESULTADO FIXO */}
+            <div className="sticky top-0 bg-white/90 backdrop-blur-md px-6 py-5 border-b border-gray-100 z-10">
+               <div className="flex justify-between items-end">
+                  <div>
+                     <div className="flex items-center gap-2 mb-1">
+                        <span className="text-xs font-black px-2.5 py-1 rounded-md text-white shadow-sm" style={{backgroundColor: getLineColor(result.finalLine)}}>
+                           Linha {result.finalLine}
+                        </span>
+                        <span className="text-sm font-bold text-gray-400">{result.dur} min</span>
+                     </div>
+                     <div className="text-2xl font-black text-gray-900 tracking-tight">
+                        {fmt(result.dep)} <span className="text-gray-300 mx-1">→</span> {fmt(result.arr)}
+                     </div>
                   </div>
                </div>
             </div>
 
-            <hr className="border-gray-200 mb-6" />
-
-            <div className="flex flex-col">
+            {/* TIMELINE VISUAL */}
+            <div className="px-6 pt-6 flex flex-col">
               {result.path.map((step, idx) => {
                   
+                  // BLOCO DE TRANSBORDO
                   if (step.type === 'transfer') {
                       return (
-                          <div key={idx} className="flex items-stretch min-h-[60px] my-2">
-                             <div className="w-14 text-right pr-3 flex flex-col justify-between py-2 text-xs font-bold text-gray-500">
-                                <span>{fmt(step.timeArrival)}</span>
-                                <span className="text-[10px] text-gray-400 my-1">espera</span>
-                                <span>{fmt(step.timeDeparture)}</span>
+                          <div key={idx} className="flex items-stretch my-3 bg-[#F2F2F7] rounded-2xl p-4 border border-gray-200">
+                             {/* Coluna Tempo */}
+                             <div className="w-12 text-right pr-4 flex flex-col justify-between py-1">
+                                <span className="text-sm font-bold text-gray-500">{fmt(step.timeArrival)}</span>
+                                <span className="text-[10px] uppercase tracking-widest font-bold text-gray-400 my-1">Wait</span>
+                                <span className="text-sm font-bold text-gray-900">{fmt(step.timeDeparture)}</span>
                              </div>
+                             
+                             {/* Linha Visual de Troca */}
                              <div className="flex flex-col items-center">
-                                <div className="w-1 h-3" style={{backgroundColor: getLineColor(step.line1)}}></div>
-                                <div className="w-4 h-4 rounded-full border-[3px] border-white shadow-sm z-10" style={{backgroundColor: '#111827'}}></div>
-                                <div className="w-1 flex-grow mt-0" style={{backgroundColor: getLineColor(step.line2)}}></div>
+                                <div className="w-1 h-1/2 rounded-t-full" style={{backgroundColor: getLineColor(step.line1)}}></div>
+                                <div className="w-1 h-1/2 rounded-b-full mt-1" style={{backgroundColor: getLineColor(step.line2)}}></div>
                              </div>
-                             <div className="pl-4 py-1 flex-1">
-                                <div className="bg-white border border-gray-200 p-3 rounded-xl shadow-sm">
-                                   <div className="text-sm font-black text-gray-900 mb-1">
-                                      Transbordo em {step.name}
-                                   </div>
-                                   <div className="text-xs font-bold flex items-center gap-1" style={{color: getLineColor(step.line2)}}>
-                                      Mudar para Linha {step.line2} <span className="text-gray-500 font-medium">({step.dir2})</span>
-                                   </div>
+                             
+                             {/* Info Transbordo */}
+                             <div className="pl-4 py-1 flex-1 flex flex-col justify-center">
+                                <div className="text-sm font-bold text-gray-900 mb-1">
+                                   Trocar em {step.name}
+                                </div>
+                                <div className="text-xs font-bold flex items-center gap-1.5" style={{color: getLineColor(step.line2)}}>
+                                   <span className="w-2 h-2 rounded-full" style={{backgroundColor: getLineColor(step.line2)}}></span>
+                                   Apanhar Linha {step.line2}
+                                </div>
+                                <div className="text-[10px] font-medium text-gray-500 mt-0.5 ml-3.5">
+                                   Sentido {step.dir2}
                                 </div>
                              </div>
                           </div>
                       );
                   }
 
+                  // PARAGENS NORMAIS
                   const color = getLineColor(step.line);
                   const isFirst = idx === 0;
                   const isLast = idx === result.path.length - 1;
                   const isImportant = isFirst || isLast;
                   
-                  const dotClasses = "rounded-full shadow-sm z-10 " + (isImportant ? "w-3 h-3 mt-1.5 border-2 border-white" : "w-2 h-2 mt-2");
-                  const textClasses = "w-14 text-right pr-3 text-xs py-1.5 " + (isImportant ? "font-black text-gray-900" : "font-bold text-gray-500");
-                  const nameClasses = "pl-4 py-1.5 flex-1 text-sm " + (isImportant ? "font-black text-gray-900" : "font-medium text-gray-600");
-
                   return (
-                     <div key={idx} className="flex items-stretch min-h-[36px]">
-                        <div className={textClasses}>
+                     <div key={idx} className="flex items-stretch min-h-[44px]">
+                        {/* Tempo */}
+                        <div className={`w-12 text-right pr-4 text-sm pt-0.5 ${isImportant ? 'font-bold text-gray-900' : 'font-medium text-gray-400'}`}>
                            {fmt(step.time)}
                         </div>
-                        <div className="flex flex-col items-center">
-                           <div className={dotClasses} style={{backgroundColor: color}}></div>
-                           {!isLast && (
-                              <div className="w-1 flex-grow -mt-2 pt-2" style={{backgroundColor: color}}></div>
+                        
+                        {/* Gráfico da Linha */}
+                        <div className="flex flex-col items-center relative w-4">
+                           {/* Bolinha */}
+                           <div className={`absolute top-1.5 rounded-full z-10 ${isImportant ? 'w-3.5 h-3.5 border-[3px] bg-white border-gray-900' : 'w-2 h-2'}`} style={{ backgroundColor: isImportant ? 'white' : color }}></div>
+                           
+                           {/* Traço de continuação */}
+                           {!isLast && result.path[idx + 1].type !== 'transfer' && (
+                              <div className="absolute top-1.5 bottom-[-6px] w-1 rounded-full" style={{backgroundColor: color}}></div>
                            )}
                         </div>
-                        <div className={nameClasses}>
+                        
+                        {/* Nome da Estação */}
+                        <div className={`pl-4 pb-4 flex-1 text-[15px] pt-0.5 ${isImportant ? 'font-bold text-gray-900' : 'font-semibold text-gray-600'}`}>
                            {step.name}
                         </div>
                      </div>
                   );
               })}
             </div>
-
           </div>
         )}
       </div>
