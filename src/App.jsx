@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import metroData from './data/timetables.json';
 
-// Ícones SVG minimalistas
 const IconSwap = () => <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-gray-400 rotate-90" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" /></svg>;
 const IconClock = () => <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>;
 const StarFilled = () => <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-yellow-500" viewBox="0 0 20 20" fill="currentColor"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" /></svg>;
@@ -18,6 +17,9 @@ const getLineColor = (line) => {
   };
   return colors[line] || '#9CA3AF';
 };
+
+// O Azul Oficial
+const BRAND_BLUE = '#00AEEF';
 
 function App() {
   const [origin, setOrigin] = useState('');
@@ -44,7 +46,6 @@ function App() {
   const favoriteStations = stations.filter(s => favorites.includes(s));
   const otherStations = stations.filter(s => !favorites.includes(s));
 
-  // Função para inverter estações
   const swapStations = () => {
     const temp = origin;
     setOrigin(destination);
@@ -201,25 +202,22 @@ function App() {
     <div className="min-h-screen bg-[#F2F2F7] flex items-start sm:items-center justify-center sm:p-4 font-sans text-gray-900">
       <div className="bg-white sm:rounded-[2.5rem] shadow-none sm:shadow-2xl w-full max-w-md min-h-screen sm:min-h-[85vh] overflow-hidden flex flex-col relative">
         
-        {/* HEADER */}
-        <div className="pt-12 pb-6 px-6 text-center shrink-0">
-           <h1 className="text-2xl font-black tracking-tight text-gray-900">Metro do Porto</h1>
-           <p className="text-sm text-gray-500 font-medium mt-1">Horários em Tempo Real</p>
+        {/* HEADER BRANDING AZUL METRO DO PORTO */}
+        <div className="pt-12 pb-8 px-6 text-center shrink-0 relative z-10" style={{backgroundColor: BRAND_BLUE}}>
+           <h1 className="text-3xl font-black tracking-tight text-white">Metro do Porto</h1>
+           <p className="text-sm text-blue-100 font-medium mt-1">Horários Oficiais e Transbordos</p>
         </div>
         
-        {/* FORMULÁRIO (ESTILO CARD) */}
-        <div className="px-6 pb-6 shrink-0 z-20">
+        <div className="px-6 pb-6 pt-6 shrink-0 z-20 bg-white">
           <form onSubmit={handleSearch} className="space-y-4">
             
-            <div className="bg-[#F2F2F7] rounded-3xl p-2 relative shadow-inner">
-                {/* Botão Swap */}
+            <div className="bg-[#F2F2F7] rounded-3xl p-2 relative shadow-inner border border-gray-100">
                 <button type="button" onClick={swapStations} className="absolute right-6 top-1/2 -translate-y-1/2 w-10 h-10 bg-white rounded-full shadow-md flex items-center justify-center hover:bg-gray-50 transition-colors z-10 border border-gray-100">
                     <IconSwap />
                 </button>
 
-                {/* Input Origem */}
                 <div className="flex items-center px-4 py-3 border-b border-gray-200/60">
-                    <div className="w-3 h-3 rounded-full bg-gray-900 mr-3"></div>
+                    <div className="w-3 h-3 rounded-full mr-3" style={{backgroundColor: BRAND_BLUE}}></div>
                     <select className="flex-1 bg-transparent font-semibold text-gray-900 outline-none appearance-none" value={origin} onChange={e => setOrigin(e.target.value)} required>
                         <option value="" disabled className="text-gray-400">De onde partes?</option>
                         {favoriteStations.length > 0 && <optgroup label="Favoritos">{favoriteStations.map(s => <option key={s} value={s}>{s}</option>)}</optgroup>}
@@ -230,9 +228,8 @@ function App() {
                     </button>
                 </div>
 
-                {/* Input Destino */}
                 <div className="flex items-center px-4 py-3">
-                    <div className="w-3 h-3 rounded-full border-2 border-gray-900 mr-3"></div>
+                    <div className="w-3 h-3 rounded-full border-[2.5px] mr-3" style={{borderColor: BRAND_BLUE}}></div>
                     <select className="flex-1 bg-transparent font-semibold text-gray-900 outline-none appearance-none" value={destination} onChange={e => setDestination(e.target.value)} required>
                         <option value="" disabled className="text-gray-400">Para onde vais?</option>
                         {favoriteStations.length > 0 && <optgroup label="Favoritos">{favoriteStations.map(s => <option key={s} value={s}>{s}</option>)}</optgroup>}
@@ -244,13 +241,12 @@ function App() {
                 </div>
             </div>
 
-            {/* Input Data/Hora */}
-            <div className="bg-[#F2F2F7] rounded-2xl flex items-center px-6 py-4 shadow-inner">
+            <div className="bg-[#F2F2F7] rounded-2xl flex items-center px-6 py-4 shadow-inner border border-gray-100">
                <IconClock />
                <input type="datetime-local" className="flex-1 ml-3 bg-transparent font-semibold text-gray-900 outline-none" value={datetime} onChange={e => setDatetime(e.target.value)} required />
             </div>
             
-            <button className="w-full py-4 mt-2 bg-gray-900 text-white rounded-2xl font-bold text-lg shadow-lg hover:bg-black active:scale-[0.98] transition-all">
+            <button className="w-full py-4 mt-2 text-white rounded-2xl font-bold text-lg shadow-lg hover:opacity-90 active:scale-[0.98] transition-all" style={{backgroundColor: BRAND_BLUE}}>
                 Ver Viagem
             </button>
           </form>
@@ -258,12 +254,10 @@ function App() {
           {error && <div className="mt-4 p-4 bg-red-50 text-red-600 font-medium rounded-2xl text-center text-sm">{error}</div>}
         </div>
 
-        {/* ÁREA DE RESULTADOS (TIMELINE EXPANSIVA) */}
         {result && (
           <div className="flex-1 bg-white border-t border-gray-100 overflow-y-auto pb-10">
             
-            {/* CABEÇALHO DO RESULTADO FIXO */}
-            <div className="sticky top-0 bg-white/90 backdrop-blur-md px-6 py-5 border-b border-gray-100 z-10">
+            <div className="sticky top-0 bg-white/95 backdrop-blur-md px-6 py-5 border-b border-gray-100 z-10 shadow-sm">
                <div className="flex justify-between items-end">
                   <div>
                      <div className="flex items-center gap-2 mb-1">
@@ -279,28 +273,23 @@ function App() {
                </div>
             </div>
 
-            {/* TIMELINE VISUAL */}
             <div className="px-6 pt-6 flex flex-col">
               {result.path.map((step, idx) => {
                   
-                  // BLOCO DE TRANSBORDO
                   if (step.type === 'transfer') {
                       return (
                           <div key={idx} className="flex items-stretch my-3 bg-[#F2F2F7] rounded-2xl p-4 border border-gray-200">
-                             {/* Coluna Tempo */}
                              <div className="w-12 text-right pr-4 flex flex-col justify-between py-1">
                                 <span className="text-sm font-bold text-gray-500">{fmt(step.timeArrival)}</span>
                                 <span className="text-[10px] uppercase tracking-widest font-bold text-gray-400 my-1">Wait</span>
                                 <span className="text-sm font-bold text-gray-900">{fmt(step.timeDeparture)}</span>
                              </div>
                              
-                             {/* Linha Visual de Troca */}
                              <div className="flex flex-col items-center">
                                 <div className="w-1 h-1/2 rounded-t-full" style={{backgroundColor: getLineColor(step.line1)}}></div>
                                 <div className="w-1 h-1/2 rounded-b-full mt-1" style={{backgroundColor: getLineColor(step.line2)}}></div>
                              </div>
                              
-                             {/* Info Transbordo */}
                              <div className="pl-4 py-1 flex-1 flex flex-col justify-center">
                                 <div className="text-sm font-bold text-gray-900 mb-1">
                                    Trocar em {step.name}
@@ -317,7 +306,6 @@ function App() {
                       );
                   }
 
-                  // PARAGENS NORMAIS
                   const color = getLineColor(step.line);
                   const isFirst = idx === 0;
                   const isLast = idx === result.path.length - 1;
@@ -325,23 +313,20 @@ function App() {
                   
                   return (
                      <div key={idx} className="flex items-stretch min-h-[44px]">
-                        {/* Tempo */}
                         <div className={`w-12 text-right pr-4 text-sm pt-0.5 ${isImportant ? 'font-bold text-gray-900' : 'font-medium text-gray-400'}`}>
                            {fmt(step.time)}
                         </div>
                         
-                        {/* Gráfico da Linha */}
                         <div className="flex flex-col items-center relative w-4">
-                           {/* Bolinha */}
-                           <div className={`absolute top-1.5 rounded-full z-10 ${isImportant ? 'w-3.5 h-3.5 border-[3px] bg-white border-gray-900' : 'w-2 h-2'}`} style={{ backgroundColor: isImportant ? 'white' : color }}></div>
+                           <div className={`absolute top-1.5 rounded-full z-10 ${isImportant ? 'w-3.5 h-3.5 border-[3px] bg-white' : 'w-2 h-2'}`} 
+                                style={{ backgroundColor: isImportant ? 'white' : color, borderColor: color }}>
+                           </div>
                            
-                           {/* Traço de continuação */}
                            {!isLast && result.path[idx + 1].type !== 'transfer' && (
                               <div className="absolute top-1.5 bottom-[-6px] w-1 rounded-full" style={{backgroundColor: color}}></div>
                            )}
                         </div>
                         
-                        {/* Nome da Estação */}
                         <div className={`pl-4 pb-4 flex-1 text-[15px] pt-0.5 ${isImportant ? 'font-bold text-gray-900' : 'font-semibold text-gray-600'}`}>
                            {step.name}
                         </div>
