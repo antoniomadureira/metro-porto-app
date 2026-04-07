@@ -4,17 +4,16 @@ import metroData from './data/timetables.json';
 const StarFilled = () => <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-yellow-500" viewBox="0 0 20 20" fill="currentColor"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" /></svg>;
 const StarOutline = () => <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-gray-400 hover:text-yellow-500 transition" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z" /></svg>;
 
-// Cores Oficiais das Linhas do Metro do Porto
 const getLineColor = (line) => {
   const colors = {
-    A: '#00AEEF', // Azul
-    B: '#E20613', // Vermelho
-    C: '#8FC743', // Verde
-    D: '#FDB913', // Amarelo
-    E: '#7A4B94', // Violeta
-    F: '#F58220'  // Laranja
+    A: '#00AEEF',
+    B: '#E20613',
+    C: '#8FC743',
+    D: '#FDB913',
+    E: '#7A4B94',
+    F: '#F58220'
   };
-  return colors[line] || '#9CA3AF'; // Cinza como fallback
+  return colors[line] || '#9CA3AF';
 };
 
 function App() {
@@ -23,14 +22,20 @@ function App() {
   const [datetime, setDatetime] = useState('');
   const [result, setResult] = useState(null);
   const [error, setError] = useState('');
-  const [favorites, setFavorites] = useState(() => JSON.parse(localStorage.getItem('metroFavorites') || '[]'));
+  
+  const [favorites, setFavorites] = useState(() => {
+    const saved = localStorage.getItem('metroFavorites');
+    return saved ? JSON.parse(saved) : [];
+  });
 
   useEffect(() => {
     const now = new Date();
     setDatetime(new Date(now - now.getTimezoneOffset() * 60000).toISOString().slice(0, 16));
   }, []);
 
-  useEffect(() => localStorage.setItem('metroFavorites', JSON.stringify(favorites)), [favorites]);
+  useEffect(() => {
+    localStorage.setItem('metroFavorites', JSON.stringify(favorites));
+  }, [favorites]);
 
   const stations = metroData.stations || [];
   const favoriteStations = stations.filter(s => favorites.includes(s));
@@ -53,7 +58,9 @@ function App() {
         const departures = departuresData[start][dayType];
         
         for (const dep of departures) {
-          const [h, m] = dep.split(':').map(Number);
+          const parts = dep.split(':');
+          const h = parseInt(parts[0], 10);
+          const m = parseInt(parts[1], 10);
           const d = new Date(time); 
           d.setHours(h, m, 0, 0);
           
@@ -61,13 +68,13 @@ function App() {
             if (!bestOption || d < bestOption.dep) {
               const duration = Math.abs(route.travel_times_from_start[endIdx] - route.travel_times_from_start[startIdx]);
               
-              // Gerar os tempos paragem a paragem
-              const path = [];
-              const step = isRev ? -1 : 1;
-              for(let i = startIdx; isRev ? i >= endIdx : i <= endIdx; i += step) {
+              const pathList = [];
+              const loopStep = isRev ? -1 : 1;
+              
+              for(let i = startIdx; (isRev ? i >= endIdx : i <= endIdx); i += loopStep) {
                  const timeDiff = Math.abs(route.travel_times_from_start[i] - route.travel_times_from_start[startIdx]);
                  const stopTime = new Date(d.getTime() + timeDiff * 60000);
-                 path.push({ name: seq[i], time: stopTime, line: route.line });
+                 pathList.push({ name: seq[i], time: stopTime, line: route.line });
               }
 
               bestOption = { 
@@ -76,7 +83,7 @@ function App() {
                 arr: new Date(d.getTime() + duration * 60000), 
                 dur: duration, 
                 dir: isRev ? route.direction_reverse : route.direction,
-                path
+                path: pathList
               };
             }
             break; 
@@ -89,61 +96,91 @@ function App() {
 
   const handleSearch = (e) => {
     e.preventDefault();
-    setError(''); setResult(null);
+    setError(''); 
+    setResult(null);
     const time = new Date(datetime);
     const dayType = (time.getDay() === 0 || time.getDay() === 6) ? "weekends" : "weekdays";
 
+    // 1. Tentar Direta
     const direct = getTrip(origin, destination, time, dayType);
     if (direct) {
-      return setResult({ type: 'direta', finalLine: direct.line, ...direct });
+      return setResult({ 
+        type: 'direta', 
+        finalLine: direct.line, 
+        line: direct.line, 
+        dep: direct.dep, 
+        arr: direct.arr, 
+        dur: direct.dur, 
+        dir: direct.dir, 
+        path: direct.path 
+      });
     }
+
+    // 2. Tentar Transbordo INTELIGENTE
+    let bestTransfer = null;
 
     for (const routeO of metroData.routes.filter(r => r.stations_sequence.includes(origin))) {
       for (const routeD of metroData.routes.filter(r => r.stations_sequence.includes(destination))) {
         if (routeO.line === routeD.line) continue; 
         
         const common = routeO.stations_sequence.filter(s => routeD.stations_sequence.includes(s));
+        
+        // Avalia TODAS as estações comuns em vez de parar na primeira
         for (const station of common) {
           if (station === origin || station === destination) continue;
 
           const leg1 = getTrip(origin, station, time, dayType);
           if (leg1) {
-            const leg2Time = new Date(leg1.arr.getTime() + 180000); // 3 mins troca
+            const leg2Time = new Date(leg1.arr.getTime() + 180000); // Dá 3 min para andar na estação
             const leg2 = getTrip(station, destination, leg2Time, dayType);
+            
             if (leg2) {
+              const totalArr = leg2.arr;
               
-              // Fundir as duas viagens numa timeline única
-              const fullPath = [];
-              leg1.path.forEach((step, idx) => {
-                 if (idx === leg1.path.length - 1) {
-                     fullPath.push({
-                         name: station,
-                         timeArrival: step.time,
-                         timeDeparture: leg2.path[0].time,
-                         type: 'transfer',
-                         line1: leg1.line,
-                         line2: leg2.line,
-                         dir2: leg2.dir
-                     });
-                 } else {
-                     fullPath.push(step);
-                 }
-              });
-              leg2.path.slice(1).forEach(step => fullPath.push(step));
+              // Se ainda não temos opção, ou se esta opção chega mais cedo que a anterior, guardamos
+              if (!bestTransfer || totalArr < bestTransfer.arr) {
+                
+                const fullPath = [];
+                leg1.path.forEach((step, idx) => {
+                   if (idx === leg1.path.length - 1) {
+                       fullPath.push({
+                           name: station,
+                           timeArrival: step.time,
+                           timeDeparture: leg2.path[0].time,
+                           type: 'transfer',
+                           line1: leg1.line,
+                           line2: leg2.line,
+                           dir2: leg2.dir
+                       });
+                   } else {
+                       fullPath.push(step);
+                   }
+                });
+                
+                leg2.path.slice(1).forEach(step => {
+                    fullPath.push(step);
+                });
 
-              return setResult({ 
-                type: 'transbordo', 
-                finalLine: leg2.line,
-                dep: leg1.dep,
-                arr: leg2.arr,
-                dur: Math.round((leg2.arr - leg1.dep) / 60000),
-                path: fullPath 
-              });
+                bestTransfer = { 
+                  type: 'transbordo', 
+                  finalLine: leg2.line,
+                  dep: leg1.dep,
+                  arr: leg2.arr,
+                  dur: Math.round((leg2.arr - leg1.dep) / 60000),
+                  path: fullPath 
+                };
+              }
             }
           }
         }
       }
     }
+
+    // Só devolve o resultado depois de testar todas as hipóteses
+    if (bestTransfer) {
+      return setResult(bestTransfer);
+    }
+
     setError('Não foi possível encontrar uma rota para este trajeto e hora.');
   };
 
@@ -153,7 +190,6 @@ function App() {
     <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4 font-sans">
       <div className="bg-white rounded-3xl shadow-2xl w-full max-w-md overflow-hidden border border-gray-100">
         
-        {/* HEADER ESTILO APP */}
         <div className="bg-gray-900 text-white p-6 pb-8 text-center relative">
            <h1 className="text-xl font-black tracking-widest uppercase mb-1">Metro do Porto</h1>
            <p className="text-xs text-gray-400">Horários Oficiais Live</p>
@@ -161,21 +197,34 @@ function App() {
         
         <div className="p-6 -mt-4 bg-white rounded-t-2xl relative z-10">
           <form onSubmit={handleSearch} className="space-y-4">
-            {[["Origem", origin, setOrigin], ["Destino", destination, setDestination]].map(([label, val, set]) => (
-              <div key={label}>
-                <label className="text-xs font-bold text-gray-400 uppercase tracking-wider ml-1">{label}</label>
-                <div className="flex gap-2 mt-1">
-                  <select className="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl font-medium focus:ring-2 focus:ring-blue-500 outline-none transition-all" value={val} onChange={e => set(e.target.value)} required>
-                    <option value="">Selecione a estação...</option>
-                    {favoriteStations.length > 0 && <optgroup label="Favoritos">{favoriteStations.map(s => <option key={s} value={s}>{s}</option>)}</optgroup>}
-                    <optgroup label="Estações">{otherStations.map(s => <option key={s} value={s}>{s}</option>)}</optgroup>
-                  </select>
-                  <button type="button" onClick={() => setFavorites(f => f.includes(val) ? f.filter(x => x !== val) : [...f, val])} className="p-3 bg-gray-50 rounded-xl border border-gray-200 hover:bg-gray-100 transition">
-                    {favorites.includes(val) ? <StarFilled /> : <StarOutline />}
-                  </button>
-                </div>
+            
+            <div>
+              <label className="text-xs font-bold text-gray-400 uppercase tracking-wider ml-1">Origem</label>
+              <div className="flex gap-2 mt-1">
+                <select className="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl font-medium focus:ring-2 focus:ring-blue-500 outline-none transition-all" value={origin} onChange={e => setOrigin(e.target.value)} required>
+                  <option value="">Selecione a estação...</option>
+                  {favoriteStations.length > 0 && <optgroup label="Favoritos">{favoriteStations.map(s => <option key={s} value={s}>{s}</option>)}</optgroup>}
+                  <optgroup label="Estações">{otherStations.map(s => <option key={s} value={s}>{s}</option>)}</optgroup>
+                </select>
+                <button type="button" onClick={() => setFavorites(f => f.includes(origin) ? f.filter(x => x !== origin) : [...f, origin])} className="p-3 bg-gray-50 rounded-xl border border-gray-200 hover:bg-gray-100 transition">
+                  {favorites.includes(origin) ? <StarFilled /> : <StarOutline />}
+                </button>
               </div>
-            ))}
+            </div>
+
+            <div>
+              <label className="text-xs font-bold text-gray-400 uppercase tracking-wider ml-1">Destino</label>
+              <div className="flex gap-2 mt-1">
+                <select className="w-full p-3 bg-gray-50 border border-gray-200 rounded-xl font-medium focus:ring-2 focus:ring-blue-500 outline-none transition-all" value={destination} onChange={e => setDestination(e.target.value)} required>
+                  <option value="">Selecione a estação...</option>
+                  {favoriteStations.length > 0 && <optgroup label="Favoritos">{favoriteStations.map(s => <option key={s} value={s}>{s}</option>)}</optgroup>}
+                  <optgroup label="Estações">{otherStations.map(s => <option key={s} value={s}>{s}</option>)}</optgroup>
+                </select>
+                <button type="button" onClick={() => setFavorites(f => f.includes(destination) ? f.filter(x => x !== destination) : [...f, destination])} className="p-3 bg-gray-50 rounded-xl border border-gray-200 hover:bg-gray-100 transition">
+                  {favorites.includes(destination) ? <StarFilled /> : <StarOutline />}
+                </button>
+              </div>
+            </div>
             
             <div className="pt-2">
                <label className="text-xs font-bold text-gray-400 uppercase tracking-wider ml-1">Partida a partir de</label>
@@ -188,11 +237,9 @@ function App() {
           {error && <div className="mt-4 p-4 bg-red-50 text-red-600 font-medium rounded-xl text-center text-sm">{error}</div>}
         </div>
 
-        {/* SECÇÃO DE RESULTADOS COM VISUAL METRO DO PORTO */}
         {result && (
           <div className="bg-gray-50 p-6 border-t border-gray-100">
             
-            {/* CABEÇALHO DO RESULTADO (Resumo igual à imagem) */}
             <div className="mb-6 flex flex-col">
                <div className="flex justify-between items-center mb-1">
                   <span className="text-sm font-bold text-gray-800">{origin}</span>
@@ -216,11 +263,9 @@ function App() {
 
             <hr className="border-gray-200 mb-6" />
 
-            {/* TIMELINE (Lista de paragens com horas) */}
             <div className="flex flex-col">
               {result.path.map((step, idx) => {
                   
-                  // Bloco de Transbordo
                   if (step.type === 'transfer') {
                       return (
                           <div key={idx} className="flex items-stretch min-h-[60px] my-2">
@@ -248,24 +293,27 @@ function App() {
                       );
                   }
 
-                  // Paragem Normal
                   const color = getLineColor(step.line);
                   const isFirst = idx === 0;
                   const isLast = idx === result.path.length - 1;
                   const isImportant = isFirst || isLast;
+                  
+                  const dotClasses = "rounded-full shadow-sm z-10 " + (isImportant ? "w-3 h-3 mt-1.5 border-2 border-white" : "w-2 h-2 mt-2");
+                  const textClasses = "w-14 text-right pr-3 text-xs py-1.5 " + (isImportant ? "font-black text-gray-900" : "font-bold text-gray-500");
+                  const nameClasses = "pl-4 py-1.5 flex-1 text-sm " + (isImportant ? "font-black text-gray-900" : "font-medium text-gray-600");
 
                   return (
                      <div key={idx} className="flex items-stretch min-h-[36px]">
-                        <div className={`w-14 text-right pr-3 text-xs ${isImportant ? 'font-black text-gray-900' : 'font-bold text-gray-500'} py-1.5`}>
+                        <div className={textClasses}>
                            {fmt(step.time)}
                         </div>
                         <div className="flex flex-col items-center">
-                           <div className={`rounded-full shadow-sm z-10 ${isImportant ? 'w-3 h-3 mt-1.5 border-2 border-white' : 'w-2 h-2 mt-2'}`} style={{backgroundColor: color}}></div>
+                           <div className={dotClasses} style={{backgroundColor: color}}></div>
                            {!isLast && (
                               <div className="w-1 flex-grow -mt-2 pt-2" style={{backgroundColor: color}}></div>
                            )}
                         </div>
-                        <div className={`pl-4 py-1.5 flex-1 text-sm ${isImportant ? 'font-black text-gray-900' : 'font-medium text-gray-600'}`}>
+                        <div className={nameClasses}>
                            {step.name}
                         </div>
                      </div>
