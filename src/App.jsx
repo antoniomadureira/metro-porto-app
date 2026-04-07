@@ -18,7 +18,6 @@ const getLineColor = (line) => {
   return colors[line] || '#9CA3AF';
 };
 
-// O Azul Oficial
 const BRAND_BLUE = '#00AEEF';
 
 function App() {
@@ -122,7 +121,6 @@ function App() {
     if (direct) {
       return setResult({ 
         type: 'direta', 
-        finalLine: direct.line, 
         line: direct.line, 
         dep: direct.dep, 
         arr: direct.arr, 
@@ -176,6 +174,7 @@ function App() {
 
                 bestTransfer = { 
                   type: 'transbordo', 
+                  firstLine: leg1.line,
                   finalLine: leg2.line,
                   dep: leg1.dep,
                   arr: leg2.arr,
@@ -202,7 +201,6 @@ function App() {
     <div className="min-h-screen bg-[#F2F2F7] flex items-start sm:items-center justify-center sm:p-4 font-sans text-gray-900">
       <div className="bg-white sm:rounded-[2.5rem] shadow-none sm:shadow-2xl w-full max-w-md min-h-screen sm:min-h-[85vh] overflow-hidden flex flex-col relative">
         
-        {/* HEADER BRANDING AZUL METRO DO PORTO */}
         <div className="pt-12 pb-8 px-6 text-center shrink-0 relative z-10" style={{backgroundColor: BRAND_BLUE}}>
            <h1 className="text-3xl font-black tracking-tight text-white">Metro do Porto</h1>
            <p className="text-sm text-blue-100 font-medium mt-1">Horários Oficiais e Transbordos</p>
@@ -260,12 +258,26 @@ function App() {
             <div className="sticky top-0 bg-white/95 backdrop-blur-md px-6 py-5 border-b border-gray-100 z-10 shadow-sm">
                <div className="flex justify-between items-end">
                   <div>
-                     <div className="flex items-center gap-2 mb-1">
-                        <span className="text-xs font-black px-2.5 py-1 rounded-md text-white shadow-sm" style={{backgroundColor: getLineColor(result.finalLine)}}>
-                           Linha {result.finalLine}
-                        </span>
-                        <span className="text-sm font-bold text-gray-400">{result.dur} min</span>
+                     {/* CABEÇALHO CORRIGIDO: Mostra as duas linhas se for transbordo */}
+                     <div className="flex items-center gap-2 mb-2">
+                        {result.type === 'transbordo' ? (
+                           <>
+                              <span className="text-xs font-black px-2.5 py-1 rounded-md text-white shadow-sm" style={{backgroundColor: getLineColor(result.firstLine)}}>
+                                 Linha {result.firstLine}
+                              </span>
+                              <span className="text-gray-300 text-xs font-bold">➔</span>
+                              <span className="text-xs font-black px-2.5 py-1 rounded-md text-white shadow-sm" style={{backgroundColor: getLineColor(result.finalLine)}}>
+                                 Linha {result.finalLine}
+                              </span>
+                           </>
+                        ) : (
+                           <span className="text-xs font-black px-2.5 py-1 rounded-md text-white shadow-sm" style={{backgroundColor: getLineColor(result.line)}}>
+                              Linha {result.line}
+                           </span>
+                        )}
+                        <span className="text-sm font-bold text-gray-400 ml-1">{result.dur} min</span>
                      </div>
+
                      <div className="text-2xl font-black text-gray-900 tracking-tight">
                         {fmt(result.dep)} <span className="text-gray-300 mx-1">→</span> {fmt(result.arr)}
                      </div>
@@ -317,13 +329,14 @@ function App() {
                            {fmt(step.time)}
                         </div>
                         
-                        <div className="flex flex-col items-center relative w-4">
-                           <div className={`absolute top-1.5 rounded-full z-10 ${isImportant ? 'w-3.5 h-3.5 border-[3px] bg-white' : 'w-2 h-2'}`} 
+                        {/* ESTRUTURA FLEX PARA A LINHA NÃO QUEBRAR E ASSUMIR A COR CERTA */}
+                        <div className="flex flex-col items-center w-4">
+                           <div className={`rounded-full z-10 shrink-0 ${isImportant ? 'w-3.5 h-3.5 border-[3px] bg-white mt-1' : 'w-2 h-2 mt-2'}`} 
                                 style={{ backgroundColor: isImportant ? 'white' : color, borderColor: color }}>
                            </div>
                            
                            {!isLast && result.path[idx + 1].type !== 'transfer' && (
-                              <div className="absolute top-1.5 bottom-[-6px] w-1 rounded-full" style={{backgroundColor: color}}></div>
+                              <div className="w-1 flex-1 -my-1 rounded-full" style={{backgroundColor: color}}></div>
                            )}
                         </div>
                         
