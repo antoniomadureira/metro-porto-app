@@ -63,7 +63,7 @@ function App() {
 
     const time = new Date(datetime);
 
-    // Motor de Busca Otimizado - Mapeamento absoluto de Datas
+    // Motor Corrigido: Devolve TODAS as partidas válidas a partir da hora pesquisada
     const getAllDirectTrips = (start, end, searchTime) => {
         const trips = [];
         const targetDayType = (searchTime.getDay() === 0 || searchTime.getDay() === 6) ? "weekends" : "weekdays";
@@ -80,44 +80,34 @@ function App() {
                     const fallbackType = targetDayType === "weekdays" ? "weekends" : "weekdays";
                     departures = route.departures[start][fallbackType];
                 }
-                
                 if (!departures || departures.length === 0) continue;
-                
-                let bestDate = null;
                 
                 for (const dep of departures) {
                     const [h, m] = dep.split(':').map(Number);
                     
-                    const dToday = new Date(searchTime);
-                    dToday.setHours(h, m, 0, 0);
+                    let d = new Date(searchTime); 
+                    d.setHours(h, m, 0, 0);
                     
-                    const dTomorrow = new Date(searchTime);
-                    dTomorrow.setDate(dTomorrow.getDate() + 1);
-                    dTomorrow.setHours(h, m, 0, 0);
+                    // Tratamento seguro da meia-noite
+                    if (searchTime.getHours() >= 20 && h <= 3) d.setDate(d.getDate() + 1);
+                    else if (searchTime.getHours() <= 3 && h >= 20) d.setDate(d.getDate() - 1);
                     
-                    const candidates = [];
-                    if (dToday >= searchTime) candidates.push(dToday);
-                    if (dTomorrow >= searchTime) candidates.push(dTomorrow);
+                    if (d < searchTime) d.setDate(d.getDate() + 1);
                     
-                    for (const c of candidates) {
-                        if (!bestDate || c < bestDate) {
-                            bestDate = c;
+                    // Se a partida for válida, calcula a duração e guarda a viagem
+                    if (d >= searchTime) {
+                        const duration = route.travel_times_from_start[endIdx] - route.travel_times_from_start[startIdx];
+                        const pathList = [];
+                        for(let i = startIdx; i <= endIdx; i++) {
+                           const timeDiff = route.travel_times_from_start[i] - route.travel_times_from_start[startIdx];
+                           pathList.push({ name: seq[i], time: new Date(d.getTime() + timeDiff * 60000), line: route.line });
                         }
+                        trips.push({ 
+                            type: 'direta', line: route.line, dep: d, 
+                            arr: new Date(d.getTime() + duration * 60000), 
+                            dur: duration, dir: route.direction, path: pathList
+                        });
                     }
-                }
-                
-                if (bestDate) {
-                    const duration = route.travel_times_from_start[endIdx] - route.travel_times_from_start[startIdx];
-                    const pathList = [];
-                    for(let i = startIdx; i <= endIdx; i++) {
-                       const timeDiff = route.travel_times_from_start[i] - route.travel_times_from_start[startIdx];
-                       pathList.push({ name: seq[i], time: new Date(bestDate.getTime() + timeDiff * 60000), line: route.line });
-                    }
-                    trips.push({ 
-                        type: 'direta', line: route.line, dep: bestDate, 
-                        arr: new Date(bestDate.getTime() + duration * 60000), 
-                        dur: duration, dir: route.direction, path: pathList
-                    });
                 }
             }
         }
@@ -127,7 +117,6 @@ function App() {
     const directTrips = getAllDirectTrips(origin, destination, time);
     const transferTrips = [];
 
-    // Gerador de Transbordos Combinados
     for (const routeO of metroData.routes) {
         if (!routeO.stations_sequence.includes(origin)) continue;
         for (const routeD of metroData.routes) {
@@ -138,29 +127,35 @@ function App() {
             for (const station of common) {
                 if (station === origin || station === destination) continue;
 
+                // 1. Vai buscar todos os metros até à estação de transbordo
                 const leg1Trips = getAllDirectTrips(origin, station, time);
                 if (leg1Trips.length === 0) continue;
-                leg1Trips.sort((a, b) => a.arr - b.arr); 
-                const leg1 = leg1Trips[0];
-
-                const leg2Time = new Date(leg1.arr.getTime() + 180000); // margem de 3 minutos para transbordo na estação
-                const leg2Trips = getAllDirectTrips(station, destination, leg2Time);
-                if (leg2Trips.length === 0) continue;
-                leg2Trips.sort((a, b) => a.arr - b.arr);
-                const leg2 = leg2Trips[0];
                 
-                const fullPath = [];
-                leg1.path.forEach((step, idx) => {
-                   if (idx === leg1.path.length - 1) {
-                       fullPath.push({ name: station, timeArrival: step.time, timeDeparture: leg2.path[0].time, type: 'transfer', line1: leg1.line, line2: leg2.line, dir2: leg2.dir });
-                   } else fullPath.push(step);
-                });
-                leg2.path.slice(1).forEach(step => fullPath.push(step));
+                // Ordena por partida e testa os primeiros 5 metros (Garante que apanhamos a melhor ligação)
+                leg1Trips.sort((a, b) => a.dep - b.dep);
+                const candidateLeg1s = leg1Trips.slice(0, 5);
 
-                transferTrips.push({ 
-                    type: 'transbordo', firstLine: leg1.line, finalLine: leg2.line, 
-                    dep: leg1.dep, arr: leg2.arr, dur: Math.round((leg2.arr - leg1.dep) / 60000), path: fullPath 
-                });
+                for (const leg1 of candidateLeg1s) {
+                    const leg2Time = new Date(leg1.arr.getTime() + 180000); // 3 mins transferência
+                    const leg2Trips = getAllDirectTrips(station, destination, leg2Time);
+                    if (leg2Trips.length === 0) continue;
+                    
+                    leg2Trips.sort((a, b) => a.arr - b.arr); // Queremos chegar rápido no 2º metro
+                    const leg2 = leg2Trips[0];
+                    
+                    const fullPath = [];
+                    leg1.path.forEach((step, idx) => {
+                       if (idx === leg1.path.length - 1) {
+                           fullPath.push({ name: station, timeArrival: step.time, timeDeparture: leg2.path[0].time, type: 'transfer', line1: leg1.line, line2: leg2.line, dir2: leg2.dir });
+                       } else fullPath.push(step);
+                    });
+                    leg2.path.slice(1).forEach(step => fullPath.push(step));
+
+                    transferTrips.push({ 
+                        type: 'transbordo', firstLine: leg1.line, finalLine: leg2.line, 
+                        dep: leg1.dep, arr: leg2.arr, dur: Math.round((leg2.arr - leg1.dep) / 60000), path: fullPath 
+                    });
+                }
             }
         }
     }
@@ -171,12 +166,12 @@ function App() {
         return setError('Rota não encontrada para os dados selecionados.');
     }
 
-    // Regras de Otimização e Desempate (Prioriza tempo de chegada e partida mais tardia)
+    // ORDENAÇÃO HUMANA: Escolhe a viagem que chega mais rápido mas que parte mais tarde
     allTrips.sort((a, b) => {
-        if (a.arr.getTime() !== b.arr.getTime()) return a.arr - b.arr; 
-        if (a.type === 'direta' && b.type !== 'direta') return -1;
+        if (a.arr.getTime() !== b.arr.getTime()) return a.arr - b.arr; // Chegar o mais cedo possível
+        if (a.type === 'direta' && b.type !== 'direta') return -1;     // Direto ganha
         if (b.type === 'direta' && a.type !== 'direta') return 1;
-        return b.dep - a.dep; 
+        return b.dep - a.dep; // SE CHEGAREM À MESMA HORA, escolhe a que parte MAIS TARDE (menos espera na rua)
     });
 
     setResult(allTrips[0]);
