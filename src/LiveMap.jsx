@@ -6,71 +6,123 @@ import metroData from './data/timetables.json';
 
 const BRAND_BLUE = '#00AEEF';
 
-// COORDENADAS REAIS E PURAS DO GPS (Sem estações fantasma)
+// COORDENADAS REAIS EXTRAÍDAS DO TEU GTFS (shapes.txt)
+// Fim das discrepâncias: A linha e a paragem usam agora os mesmos dados absolutos.
 const STATIONS_GEO = {
   // Tronco Comum
-  'Estádio do Dragão': [41.1614, -8.5836], 'Campanhã': [41.1491, -8.5818], 'Heroísmo': [41.1490, -8.5900],
-  '24 de Agosto': [41.1505, -8.5980], 'Bolhão': [41.1500, -8.6040], 'Trindade': [41.1525, -8.6094],
-  'Lapa': [41.1558, -8.6174], 'Carolina Michaelis': [41.1564, -8.6247], 'Casa da Música': [41.1585, -8.6305],
-  'Francos': [41.1627, -8.6385], 'Ramalde': [41.1685, -8.6420], 'Viso': [41.1747, -8.6453],
-  'Sete Bicas': [41.1818, -8.6477], 'Senhora da Hora': [41.1876, -8.6545],
-  
-  // Linha A (Azul)
-  'Vasco da Gama': [41.1852, -8.6595], 'Estádio do Mar': [41.1824, -8.6653], 'Pedro Hispano': [41.1788, -8.6685],
-  'Parque de Real': [41.1818, -8.6750], 'Câmara Matosinhos': [41.1812, -8.6815], 'Matosinhos Sul': [41.1790, -8.6880],
-  'Brito Capelo': [41.1820, -8.6920], 'Mercado': [41.1845, -8.6915], 'Senhor de Matosinhos': [41.1866, -8.6806],
-  
-  // Linha B / BX / E
-  'Fonte do Cuco': [41.1944, -8.6473], 'Custóias': [41.2023, -8.6439], 'Esposade': [41.2120, -8.6401],
-  'Crestins': [41.2263, -8.6436], 'Verdes': [41.2372, -8.6560], 
-  'Botica': [41.2400, -8.6650], 'Aeroporto': [41.2382, -8.6687], 
-  'Pedras Rubras': [41.2435, -8.6616], 'Lidador': [41.2520, -8.6650], 'Vilar do Pinheiro': [41.2690, -8.6830], 
-  'Modivas Sul': [41.2830, -8.6980], 'Modivas Centro': [41.2940, -8.7110], 'Mindelo': [41.3105, -8.7230], 
-  'Espaço Natureza': [41.3210, -8.7320], 'Varziela': [41.3320, -8.7400], 'Árvore': [41.3400, -8.7420], 
-  'Azurara': [41.3470, -8.7400], 'Santa Clara': [41.3520, -8.7420], 'Vila do Conde': [41.3550, -8.7440], 
-  'Alto de Pega': [41.3650, -8.7470], 'Portas Fronhas': [41.3730, -8.7500], 'São Brás': [41.3800, -8.7540], 
-  'Póvoa de Varzim': [41.3860, -8.7600], 
-  
-  // Linha C (Verde)
-  'Cândido dos Reis': [41.1960, -8.6430], 'Pias': [41.2010, -8.6380], 'Araújo': [41.2060, -8.6320],
-  'Custió': [41.2120, -8.6250], 'Parque Maia': [41.2250, -8.6200], 'Fórum Maia': [41.2320, -8.6220],
-  'Zona Industrial': [41.2380, -8.6180], 'Mandim': [41.2450, -8.6150], 'Castêlo da Maia': [41.2580, -8.6100],
-  'ISMAI': [41.2647, -8.6080],
-  
-  // Linha D (Amarela)
-  'Hospital S. João': [41.1816, -8.6015], 'IPO': [41.1780, -8.6025], 'Pólo Universitário': [41.1730, -8.6010],
-  'Salgueiros': [41.1680, -8.5990], 'Combatentes': [41.1630, -8.5980], 'Marquês': [41.1580, -8.6010],
-  'Faria Guimarães': [41.1550, -8.6060], 'Aliados': [41.1470, -8.6110], 'São Bento': [41.1420, -8.6090],
-  'Jardim do Morro': [41.1380, -8.6095], 'General Torres': [41.1320, -8.6080], 'Câmara Gaia': [41.1280, -8.6070],
-  'João de Deus': [41.1230, -8.6060], 'D. João II': [41.1180, -8.6050], 'Santo Ovídio': [41.1147, -8.6033],
-  'Manuel Leão': [41.1080, -8.5990], 'Hospital Santos Silva': [41.1030, -8.5950], 'Vila d\'Este': [41.0975, -8.5910],
-  
-  // Linha F (Laranja)
-  'Contumil': [41.1605, -8.5775], 'Nasoni': [41.1618, -8.5750], 'Nau Vitória': [41.1630, -8.5720], 
-  'Levada': [41.1650, -8.5630], 'Rio Tinto': [41.1680, -8.5550], 'Campainha': [41.1720, -8.5450], 
-  'Baguim': [41.1750, -8.5350], 'Carreira': [41.1780, -8.5250], 'Venda Nova': [41.1820, -8.5150], 
-  'Fânzeres': [41.1850, -8.5050]
+  'Estádio do Dragão': [41.16071701, -8.58241558],
+  'Campanhã': [41.15053558, -8.58624458],
+  'Heroísmo': [41.14669799, -8.59297752],
+  '24 de Agosto': [41.14879608, -8.59834861],
+  'Bolhão': [41.14978408, -8.60590076],
+  'Trindade': [41.15227890, -8.60929870],
+  'Lapa': [41.15710830, -8.61672306],
+  'Carolina Michaelis': [41.15858459, -8.62224578],
+  'Casa da Música': [41.16057586, -8.62828159],
+  'Francos': [41.16555023, -8.63634681],
+  'Ramalde': [41.17296218, -8.64176559],
+  'Viso': [41.17724990, -8.64649772],
+  'Sete Bicas': [41.18241882, -8.65214920],
+  'Senhora da Hora': [41.18810272, -8.65446567],
+
+  // Linha A Oeste
+  'Vasco da Gama': [41.19023513, -8.66103744],
+  'Estádio do Mar': [41.18576812, -8.66118907],
+  'Pedro Hispano': [41.18038177, -8.66623210],
+  'Parque de Real': [41.17910766, -8.67354583],
+  'Câmara Matosinhos': [41.18069839, -8.68122673],
+  'Matosinhos Sul': [41.18017196, -8.68855285],
+  'Brito Capelo': [41.18390655, -8.69146919],
+  'Mercado': [41.18748474, -8.69339084],
+  'Senhor de Matosinhos': [41.18820571, -8.68512344],
+
+  // Ponto de Separação Norte
+  'Fonte do Cuco': [41.19416046, -8.65577125],
+
+  // Linhas B e E (Sentido Aeroporto)
+  'Custóias': [41.20029449, -8.65555858],
+  'Esposade': [41.21606826, -8.65454101],
+  'Crestins': [41.23301315, -8.65659332],
+  'Verdes': [41.23824691, -8.65821170],
+
+  // Linha E (Aeroporto Extensão)
+  'Botica': [41.23752212, -8.66520786],
+  'Aeroporto': [41.23707580, -8.66944217],
+
+  // Linha B (Póvoa Extensão)
+  'Pedras Rubras': [41.24623489, -8.66180706],
+  'Lidador': [41.25495147, -8.66801834],
+  'Vilar do Pinheiro': [41.27029800, -8.67951488],
+  'Modivas Sul': [41.28525161, -8.69370269],
+  'Modivas Centro': [41.29368209, -8.69923782],
+  'Mindelo': [41.30049133, -8.70400428],
+  'Espaço Natureza': [41.31507873, -8.71420860],
+  'Varziela': [41.32122039, -8.71868133],
+  'Árvore': [41.33422470, -8.72072124],
+  'Azurara': [41.34040069, -8.72555541],
+  'Santa Clara': [41.34596633, -8.72812175],
+  'Vila do Conde': [41.35398483, -8.73582553],
+  'Alto de Pega': [41.35909652, -8.73987007],
+  'Portas Fronhas': [41.36464309, -8.74522495],
+  'São Brás': [41.36895370, -8.74955844],
+  'Póvoa de Varzim': [41.37345504, -8.75412178],
+
+  // Linha C Norte
+  'Cândido dos Reis': [41.20069885, -8.64970302],
+  'Pias': [41.20823287, -8.64712238],
+  'Araújo': [41.21690750, -8.64097785],
+  'Custió': [41.22233963, -8.63899612],
+  'Parque Maia': [41.22901916, -8.62689685],
+  'Fórum Maia': [41.23463439, -8.62393665],
+  'Zona Industrial': [41.24396896, -8.62855529],
+  'Mandim': [41.25357818, -8.62830829],
+  'Castêlo da Maia': [41.26274871, -8.61698627],
+  'ISMAI': [41.26890563, -8.61538696],
+
+  // Linha D
+  'Vila d\'Este': [41.09872055, -8.58871555],
+  'Hospital Santos Silva': [41.10575866, -8.59107494],
+  'Manuel Leão': [41.11066055, -8.59995841],
+  'Santo Ovídio': [41.11554718, -8.60655498],
+  'D. João II': [41.11965942, -8.60622978],
+  'João de Deus': [41.12605667, -8.60562705],
+  'Câmara Gaia': [41.12966537, -8.60611629],
+  'General Torres': [41.13386917, -8.60748863],
+  'Jardim do Morro': [41.13763809, -8.60864639],
+  'São Bento': [41.14493942, -8.61081504],
+  'Aliados': [41.14858245, -8.61094474],
+  'Faria Guimarães': [41.15721893, -8.60914134],
+  'Marquês': [41.16112136, -8.60427188],
+  'Combatentes': [41.16530227, -8.59846401],
+  'Salgueiros': [41.16968536, -8.59874439],
+  'Pólo Universitário': [41.17424774, -8.60360717],
+  'IPO': [41.18125152, -8.60452079],
+  'Hospital S. João': [41.18326187, -8.60223960],
+
+  // Linha F
+  'Fânzeres': [41.17129898, -8.54293823],
+  'Venda Nova': [41.17515563, -8.54196166],
+  'Carreira': [41.17982482, -8.54360389],
+  'Baguim': [41.18556976, -8.54589176],
+  'Campainha': [41.18345260, -8.55395507],
+  'Rio Tinto': [41.17942047, -8.56026363],
+  'Levada': [41.17575836, -8.56212043],
+  'Nau Vitória': [41.17412185, -8.57353401],
+  'Nasoni': [41.17076873, -8.57731723],
+  'Contumil': [41.16571044, -8.57863903]
 };
 
-// NORMALIZADOR: Garante que os nomes do JSON dão sempre match com o mapa (Tolerância a acentos/espaços)
 const normalizeName = (name) => {
   if (!name) return '';
   const n = name.trim();
   if (STATIONS_GEO[n]) return n;
   const aliases = {
-    'Campo 24 de Agosto': '24 de Agosto',
-    'Carolina Michaëlis': 'Carolina Michaelis',
-    'Câmara de Matosinhos': 'Câmara Matosinhos',
-    'Camara de Matosinhos': 'Câmara Matosinhos',
-    'Camara Matosinhos': 'Câmara Matosinhos',
-    'Castelo da Maia': 'Castêlo da Maia',
-    'Hospital Sao Joao': 'Hospital S. João',
-    'Hospital São João': 'Hospital S. João',
-    'Polo Universitário': 'Pólo Universitário',
-    'Pólo Universitario': 'Pólo Universitário',
-    'Câmara de Gaia': 'Câmara Gaia',
-    'Camara de Gaia': 'Câmara Gaia',
-    'Povoa de Varzim': 'Póvoa de Varzim'
+    'Campo 24 de Agosto': '24 de Agosto', 'Carolina Michaëlis': 'Carolina Michaelis',
+    'Câmara de Matosinhos': 'Câmara Matosinhos', 'Camara de Matosinhos': 'Câmara Matosinhos',
+    'Camara Matosinhos': 'Câmara Matosinhos', 'Castelo da Maia': 'Castêlo da Maia',
+    'Hospital Sao Joao': 'Hospital S. João', 'Hospital São João': 'Hospital S. João',
+    'Polo Universitário': 'Pólo Universitário', 'Pólo Universitario': 'Pólo Universitário',
+    'Câmara de Gaia': 'Câmara Gaia', 'Camara de Gaia': 'Câmara Gaia', 'Povoa de Varzim': 'Póvoa de Varzim'
   };
   return aliases[n] || n;
 };
@@ -80,7 +132,6 @@ const getLineColor = (line) => {
   return colors[line] || '#9CA3AF';
 };
 
-// MARCADOR HTML: A prova de bala contra o evento "furar" para o mapa
 const createStationIcon = (isSelected) => L.divIcon({
   className: 'custom-station-icon',
   html: `<div style="
@@ -97,7 +148,6 @@ const createStationIcon = (isSelected) => L.divIcon({
   iconSize: [0, 0]
 });
 
-// Ícone Dinâmico das Linhas (A, B, BX...)
 const createMetroIcon = (lineColor, lineLetter) => L.divIcon({
   className: 'custom-metro-icon',
   html: `<div style="
@@ -109,7 +159,6 @@ const createMetroIcon = (lineColor, lineLetter) => L.divIcon({
   iconSize: [0, 0] 
 });
 
-// Extrai Ida e Volta diretamente do JSON
 const getRealRoutes = (routes) => {
     if (!routes) return [];
     const normalized = [];
@@ -141,24 +190,37 @@ const getRealRoutes = (routes) => {
     return normalized;
 };
 
-// Controlador de Geolocalização Seguro
 function LocationControl() {
   const map = useMap();
   const [position, setPosition] = useState(null);
+  const [isTracking, setIsTracking] = useState(false);
 
   useEffect(() => {
-    map.on('locationfound', (e) => {
-      setPosition(e.latlng);
-      map.flyTo(e.latlng, 15, { animate: true, duration: 1.5 });
-    });
-  }, [map]);
+    let watchId;
+    if (isTracking) {
+        watchId = navigator.geolocation.watchPosition(
+            (pos) => {
+                const newPos = [pos.coords.latitude, pos.coords.longitude];
+                setPosition(newPos);
+            },
+            (err) => console.error("Erro GPS:", err),
+            { enableHighAccuracy: true, maximumAge: 1000, timeout: 5000 }
+        );
+        navigator.geolocation.getCurrentPosition((pos) => {
+            map.flyTo([pos.coords.latitude, pos.coords.longitude], 15, { animate: true });
+        });
+    } else {
+        setPosition(null);
+    }
+    return () => { if (watchId) navigator.geolocation.clearWatch(watchId); };
+  }, [isTracking, map]);
 
   return (
     <>
       <div className="absolute bottom-24 right-4 z-[400]">
         <button 
-          onClick={() => map.locate()} 
-          className="w-12 h-12 bg-white rounded-full shadow-lg flex items-center justify-center text-[#00AEEF] hover:bg-gray-50 active:scale-95 transition-all border border-gray-100"
+          onClick={() => setIsTracking(!isTracking)} 
+          className={`w-12 h-12 rounded-full shadow-lg flex items-center justify-center transition-all border ${isTracking ? 'bg-[#00AEEF] text-white border-[#00AEEF]' : 'bg-white text-[#00AEEF] border-gray-100 hover:bg-gray-50'}`}
           aria-label="Minha Localização"
         >
           <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -167,20 +229,24 @@ function LocationControl() {
           </svg>
         </button>
       </div>
+      
       {position && (
         <Marker position={position} icon={L.divIcon({
-          className: 'user-gps-marker',
-          html: `<div style="background-color: #00AEEF; border: 3px solid white; border-radius: 50%; width: 16px; height: 16px; box-shadow: 0 0 10px rgba(0,174,239,0.5); margin-left: -8px; margin-top: -8px;"></div>`,
+          className: 'user-gps-live',
+          html: `
+            <div style="position: relative; width: 18px; height: 18px;">
+                <div style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; background-color: #00AEEF; border: 3px solid white; border-radius: 50%; box-shadow: 0 0 10px rgba(0,174,239,0.6); z-index: 2;"></div>
+                <div style="position: absolute; top: -50%; left: -50%; width: 200%; height: 200%; background-color: #00AEEF; border-radius: 50%; opacity: 0.4; animation: gps-pulse 1.5s infinite ease-out; z-index: 1;"></div>
+                <style>@keyframes gps-pulse { 0% { transform: scale(0.5); opacity: 0.8; } 100% { transform: scale(1.5); opacity: 0; } }</style>
+            </div>
+          `,
           iconSize: [0,0]
-        })}>
-          <Popup className="font-bold text-gray-900 text-center">Estás Aqui</Popup>
-        </Marker>
+        })} />
       )}
     </>
   );
 }
 
-// Interação para fechar a Bottom Sheet
 function MapInteraction({ onMapClick }) {
   useMapEvents({ click: () => onMapClick() });
   return null;
@@ -190,13 +256,12 @@ export default function LiveMap() {
   const portoCenter = [41.1659, -8.6291];
   const [liveMetros, setLiveMetros] = useState([]);
   const [stationTimers, setStationTimers] = useState({});
-  
   const [selectedStation, setSelectedStation] = useState(null);
   const [displayStation, setDisplayStation] = useState(null);
 
   const realRoutes = useMemo(() => getRealRoutes(metroData?.routes || []), []);
 
-  // RENDERIZAÇÃO ESTREITA: Apenas liga os pontos exatos
+  // MATEMÁTICA PURA: A linha é desenhada ligando diretamente as paragens da STATIONS_GEO
   const routeLines = useMemo(() => {
     const lines = [];
     const drawn = new Set();
@@ -204,20 +269,18 @@ export default function LiveMap() {
         if (drawn.has(route.line)) return; 
         const coords = route.stations_sequence.map(st => {
             const base = STATIONS_GEO[normalizeName(st)];
-            if(!base) return null;
-            return [base[0], base[1]]; // Coordenas puras sem desvios matemáticos
+            return base ? [base[0], base[1]] : null;
         }).filter(Boolean);
+
         lines.push({ line: route.line, color: getLineColor(route.line), coords });
         drawn.add(route.line);
     });
     return lines;
   }, [realRoutes]);
 
-  // Buffer de animação fluida para o painel inferior
   useEffect(() => {
-      if (selectedStation) {
-          setDisplayStation(selectedStation);
-      } else {
+      if (selectedStation) setDisplayStation(selectedStation);
+      else {
           const timer = setTimeout(() => setDisplayStation(null), 300);
           return () => clearTimeout(timer);
       }
@@ -265,7 +328,6 @@ export default function LiveMap() {
                      const totalDur = times[times.length - 1];
                      const arrDate = new Date(depDate.getTime() + totalDur * 60000);
 
-                     // FÍSICA ESTRITA DO METRO NO MAPA
                      if (nowTime >= depDate.getTime() && nowTime <= arrDate.getTime()) {
                         const elapsedMins = (nowTime - depDate.getTime()) / 60000;
                         let currentIdx = 0;
@@ -286,7 +348,6 @@ export default function LiveMap() {
                             const latB = STATIONS_GEO[stB][0];
                             const lngB = STATIONS_GEO[stB][1];
 
-                            // Interpolação linear pura sem margens
                             const currentLat = latA + (latB - latA) * progress;
                             const currentLng = lngA + (lngB - lngA) * progress;
 
@@ -301,7 +362,6 @@ export default function LiveMap() {
                         }
                      }
 
-                     // ATUALIZAÇÃO DOS PAINÉIS DE PARAGENS
                      if (arrDate.getTime() > nowTime && depDate.getTime() - nowTime < 2 * 3600000) {
                          seq.forEach((stationName, idx) => {
                             const normName = normalizeName(stationName);
@@ -310,9 +370,7 @@ export default function LiveMap() {
                                 const diffMins = Math.round((passTime - nowTime) / 60000);
 
                                 if (diffMins >= 0 && diffMins <= 120) {
-                                    if (!timers[normName][finalDestination]) {
-                                        timers[normName][finalDestination] = [];
-                                    }
+                                    if (!timers[normName][finalDestination]) timers[normName][finalDestination] = [];
                                     
                                     timers[normName][finalDestination].push({
                                        line: route.line,
@@ -331,15 +389,11 @@ export default function LiveMap() {
            Object.keys(timers).forEach(s => {
                Object.keys(timers[s]).forEach(dest => {
                    timers[s][dest].sort((a, b) => a.timeValue - b.timeValue);
-                   
                    const unique = [];
                    const seen = new Set();
                    for (const t of timers[s][dest]) {
                        const key = `${t.line}-${t.timeValue}`;
-                       if (!seen.has(key)) {
-                           seen.add(key);
-                           unique.push(t);
-                       }
+                       if (!seen.has(key)) { seen.add(key); unique.push(t); }
                    }
                    timers[s][dest] = unique.slice(0, 2);
                });
@@ -371,29 +425,18 @@ export default function LiveMap() {
           <LocationControl />
           <MapInteraction onMapClick={() => setSelectedStation(null)} />
 
-          {/* Linhas cruzam os pontos exatos. Cores fundem-se no tronco comum pela opacidade */}
+          {/* O ALINHAMENTO PERFEITO: A linha passa estritamente nos pontos das paragens */}
           {routeLines.map((rl, idx) => (
-             <Polyline key={idx} positions={rl.coords} pathOptions={{ color: rl.color, weight: 5, opacity: 0.7 }} />
+             <Polyline key={idx} positions={rl.coords} pathOptions={{ color: rl.color, weight: 6, opacity: 0.6 }} />
           ))}
 
-          {/* MARCADORES HTML: Clicáveis e isolados contra o "efeito bolha" */}
           {Object.entries(STATIONS_GEO).map(([name, pos]) => {
              const isSelected = selectedStation === name || displayStation === name;
              return (
-                 <Marker 
-                    key={name} 
-                    position={pos} 
-                    icon={createStationIcon(isSelected)}
-                    eventHandlers={{
-                        click: () => {
-                            setSelectedStation(name);
-                        },
-                    }}
-                 />
+                 <Marker key={name} position={pos} icon={createStationIcon(isSelected)} eventHandlers={{ click: () => setSelectedStation(name) }} />
              );
           })}
 
-          {/* METROS EM MOVIMENTO NO MAPA */}
           {liveMetros.map((metro) => (
              <Marker key={metro.id} position={metro.pos} icon={createMetroIcon(metro.color, metro.line)}>
                 <Popup>
@@ -408,10 +451,7 @@ export default function LiveMap() {
 
         </MapContainer>
 
-        {/* BOTTOM SHEET - DESLIZE SUAVE COM RETENÇÃO DE ESTADO */}
-        <div 
-            className={`absolute bottom-0 left-0 w-full bg-white rounded-t-[24px] shadow-[0_-10px_40px_rgba(0,0,0,0.15)] z-[1000] transition-transform duration-300 ease-out flex flex-col max-h-[65%] ${selectedStation ? 'translate-y-0' : 'translate-y-[120%]'}`}
-        >
+        <div className={`absolute bottom-0 left-0 w-full bg-white rounded-t-[24px] shadow-[0_-10px_40px_rgba(0,0,0,0.15)] z-[1000] transition-transform duration-300 ease-out flex flex-col max-h-[65%] ${selectedStation ? 'translate-y-0' : 'translate-y-[120%]'}`}>
             {displayStation && (
                 <>
                     <div className="flex justify-center pt-4 pb-2 cursor-pointer shrink-0" onClick={() => setSelectedStation(null)}>
