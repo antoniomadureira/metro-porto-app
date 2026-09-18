@@ -3,9 +3,11 @@ import csv
 import json
 import zipfile
 from collections import defaultdict
+from datetime import datetime
 
-ZIP_FILE = "gtfs.zip"
-OUTPUT_JSON = "../src/data/timetables.json"
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+ZIP_FILE = os.path.join(BASE_DIR, "gtfs.zip")
+OUTPUT_JSON = os.path.abspath(os.path.join(BASE_DIR, "../src/data/timetables.json"))
 
 def time_to_minutes(t_str):
     parts = t_str.split(':')
@@ -23,7 +25,7 @@ def process_gtfs():
     services = {}
     trips = {}
     
-    metro_data = {"stations": set(), "routes": []}
+    metro_data = {"updated_at": datetime.now().strftime("%Y-%m-%d %H:%M"),"stations": set(), "routes": []}
     timetable = defaultdict(lambda: defaultdict(lambda: defaultdict(lambda: defaultdict(list))))
     trip_stops = defaultdict(list)
     longest_trip_stops = defaultdict(lambda: defaultdict(list))
