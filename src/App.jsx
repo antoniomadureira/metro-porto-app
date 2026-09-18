@@ -109,41 +109,41 @@ function App() {
             const startIdx = route.stations_sequence.indexOf(startStation);
             const endIdx = route.stations_sequence.indexOf(destStation);
             
+            // Garante que o destino está Á FRENTE da origem na sequência da linha (Impede andar para trás)
             if (startIdx !== -1 && endIdx !== -1 && startIdx < endIdx) {
-                const terminalStation = route.terminal;
+                let stationDepsObject = route.departures_real[startStation];
                 
-                let stationDepsObject = route.departures_real[terminalStation];
-                if (!stationDepsObject && Object.keys(route.departures_real).length > 0) {
-                    stationDepsObject = route.departures_real[Object.keys(route.departures_real)[0]];
+                if (!stationDepsObject) {
+                    stationDepsObject = route.departures_real[route.terminal] || route.departures_real[Object.keys(route.departures_real)[0]];
                 }
                 
                 const deps = stationDepsObject?.[dayType] || stationDepsObject?.["weekdays"] || [];
                 
                 for (const dep of deps) {
                     const [h, m] = dep.split(':').map(Number);
+                    let userStartDate = new Date(sTime.getFullYear(), sTime.getMonth(), sTime.getDate(), h, m, 0);
                     
-                    let depTerminalDate = new Date(sTime.getFullYear(), sTime.getMonth(), sTime.getDate(), h, m, 0);
-                    
-                    if (h <= 3 && sTime.getHours() >= 20) depTerminalDate.setDate(depTerminalDate.getDate() + 1);
-                    else if (h >= 20 && sTime.getHours() <= 3) depTerminalDate.setDate(depTerminalDate.getDate() - 1);
+                    if (h <= 3 && sTime.getHours() >= 20) userStartDate.setDate(userStartDate.getDate() + 1);
+                    else if (h >= 20 && sTime.getHours() <= 3) userStartDate.setDate(userStartDate.getDate() - 1);
 
-                    const timeToUserStart = route.travel_times_from_start[startIdx];
-                    let userStartDate = new Date(depTerminalDate.getTime() + timeToUserStart * 60000);
-
-                    if (userStartDate.getTime() < sTime.getTime() && (sTime.getTime() - userStartDate.getTime()) > 4 * 3600000) {
-                        depTerminalDate.setDate(depTerminalDate.getDate() + 1);
-                        userStartDate = new Date(depTerminalDate.getTime() + timeToUserStart * 60000);
+                    const isDirectStart = route.departures_real[startStation] !== undefined;
+                    if (!isDirectStart) {
+                        const timeToUserStart = route.travel_times_from_start[startIdx];
+                        userStartDate = new Date(userStartDate.getTime() + timeToUserStart * 60000);
                     }
 
                     if (userStartDate.getTime() >= sTime.getTime() && userStartDate.getTime() - sTime.getTime() <= 24 * 3600000) {
-                        const timeToDest = route.travel_times_from_start[endIdx];
-                        const arrDate = new Date(depTerminalDate.getTime() + timeToDest * 60000);
-                        const duration = timeToDest - timeToUserStart;
+                        const duration = (route.travel_times_from_start[endIdx] - route.travel_times_from_start[startIdx]);
+                        const arrDate = new Date(userStartDate.getTime() + duration * 60000);
 
                         const pathList = [];
-                        for(let i = startIdx; i <= endIdx; i++) {
-                           const tDiff = route.travel_times_from_start[i] - timeToUserStart;
-                           pathList.push({ name: route.stations_sequence[i], time: new Date(userStartDate.getTime() + tDiff * 60000), line: route.line });
+                        for (let i = startIdx; i <= endIdx; i++) {
+                            const tDiff = route.travel_times_from_start[i] - route.travel_times_from_start[startIdx];
+                            pathList.push({ 
+                                name: route.stations_sequence[i], 
+                                time: new Date(userStartDate.getTime() + tDiff * 60000), 
+                                line: route.line 
+                            });
                         }
 
                         trips.push({ type: 'direta', line: route.line, dep: userStartDate, arr: arrDate, dur: duration, dir: route.direction, path: pathList });
@@ -165,58 +165,68 @@ function App() {
         return uniqueTrips;
     };
 
+    // 1. Procurar viagens diretas
     const directTrips = getAllValidTrips(origin, destination, searchTime);
+
+    // REGRA DE OURO: Se existir rota direta, escolhe a mais rápida e NUNCA sugere transbordos!
+    if (directTrips.length > 0) {
+        setResult(directTrips[0]);
+        return;
+    }
+
+    // 2. Transbordos (só são calculados se não houver rota direta)
     const transferTrips = [];
 
     for (const routeO of realRoutes) {
-        if (!routeO.stations_sequence.includes(origin)) continue;
+        const startIdxO = routeO.stations_sequence.indexOf(origin);
+        if (startIdxO === -1) continue;
+
         for (const routeD of realRoutes) {
             if (routeO.line === routeD.line) continue; 
-            if (!routeD.stations_sequence.includes(destination)) continue;
+            const endIdxD = routeD.stations_sequence.indexOf(destination);
+            if (endIdxD === -1) continue;
 
             const common = routeO.stations_sequence.filter(s => routeD.stations_sequence.includes(s));
             for (const station of common) {
                 if (station === origin || station === destination) continue;
 
-                let leg1Trips = getAllValidTrips(origin, station, searchTime);
-                if (leg1Trips.length === 0) continue;
-                
-                const candidateLeg1s = leg1Trips.slice(0, 3);
-                
-                for (const leg1 of candidateLeg1s) {
-                    const leg2Time = new Date(leg1.arr.getTime() + 180000); 
-                    let leg2Trips = getAllValidTrips(station, destination, leg2Time);
-                    if (leg2Trips.length === 0) continue;
-                    
-                    const leg2 = leg2Trips[0];
-                    
-                    const fullPath = [];
-                    leg1.path.forEach((step, idx) => {
-                       if (idx === leg1.path.length - 1) fullPath.push({ name: station, timeArrival: step.time, timeDeparture: leg2.path[0].time, type: 'transfer', line1: leg1.line, line2: leg2.line, dir2: leg2.dir });
-                       else fullPath.push(step);
-                    });
-                    leg2.path.slice(1).forEach(step => fullPath.push(step));
+                const transferIdxO = routeO.stations_sequence.indexOf(station);
+                const transferIdxD = routeD.stations_sequence.indexOf(station);
 
-                    transferTrips.push({ type: 'transbordo', firstLine: leg1.line, finalLine: leg2.line, dep: leg1.dep, arr: leg2.arr, dur: Math.round((leg2.arr.getTime() - leg1.dep.getTime()) / 60000), path: fullPath });
+                // VALIDAÇÃO ANTI-BACKTRACKING: A estação de transbordo TEM de avançar na direção do destino
+                if (transferIdxO > startIdxO && transferIdxD < endIdxD) {
+                    let leg1Trips = getAllValidTrips(origin, station, searchTime);
+                    if (leg1Trips.length === 0) continue;
+                    
+                    const candidateLeg1s = leg1Trips.slice(0, 2);
+                    
+                    for (const leg1 of candidateLeg1s) {
+                        const leg2Time = new Date(leg1.arr.getTime() + 120000); // 2 minutos de margem
+                        let leg2Trips = getAllValidTrips(station, destination, leg2Time);
+                        if (leg2Trips.length === 0) continue;
+                        
+                        const leg2 = leg2Trips[0];
+                        
+                        const fullPath = [];
+                        leg1.path.forEach((step, idx) => {
+                           if (idx === leg1.path.length - 1) fullPath.push({ name: station, timeArrival: step.time, timeDeparture: leg2.path[0].time, type: 'transfer', line1: leg1.line, line2: leg2.line, dir2: leg2.dir });
+                           else fullPath.push(step);
+                        });
+                        leg2.path.slice(1).forEach(step => fullPath.push(step));
+
+                        transferTrips.push({ type: 'transbordo', firstLine: leg1.line, finalLine: leg2.line, dep: leg1.dep, arr: leg2.arr, dur: Math.round((leg2.arr.getTime() - leg1.dep.getTime()) / 60000), path: fullPath });
+                    }
                 }
             }
         }
     }
 
-    const allTrips = [...directTrips, ...transferTrips];
-    
-    if (allTrips.length === 0) {
+    if (transferTrips.length === 0) {
         return setError('Rota não encontrada para os dados selecionados.');
     }
 
-    allTrips.sort((a, b) => {
-        if (a.arr.getTime() !== b.arr.getTime()) return a.arr.getTime() - b.arr.getTime(); 
-        if (a.type === 'direta' && b.type !== 'direta') return -1;
-        if (b.type === 'direta' && a.type !== 'direta') return 1;
-        return a.dep.getTime() - b.dep.getTime(); 
-    });
-
-    setResult(allTrips[0]);
+    transferTrips.sort((a, b) => a.arr.getTime() - b.arr.getTime());
+    setResult(transferTrips[0]);
   };
 
   const fmt = (d) => d.toLocaleTimeString('pt-PT', { hour: '2-digit', minute: '2-digit' });
@@ -234,6 +244,9 @@ function App() {
                     <div>
                        <h1 className="text-[28px] font-black tracking-tighter text-gray-900 leading-none">Metro do Porto</h1>
                        <p className="text-[13px] text-gray-500 font-bold mt-1.5 uppercase tracking-widest">Horários & Rotas</p>
+                       <p className="text-[11px] text-gray-400 font-medium mt-1">
+  Horários oficiais GTFS · Atualizado em: {metroData?.updated_at || 'Julho 2026'}
+</p>
                     </div>
                     <div className="w-12 h-12 bg-[#00AEEF] rounded-br-[24px] rounded-tl-[24px] flex items-center justify-center shadow-sm">
                        <span className="text-white font-black text-2xl italic pr-1">M</span>

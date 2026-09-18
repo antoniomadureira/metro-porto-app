@@ -9,7 +9,8 @@
     "lint": "eslint . --ext js,jsx --report-unused-disable-directives --max-warnings 0",
     "preview": "vite preview",
     "predeploy": "npm run build",
-    "deploy": "gh-pages -d dist"
+    "deploy": "gh-pages -d dist",
+    "update-gtfs": "python parser_local/gtfs_parser.py && python parser_local/test_timetables.py"
   },
   "dependencies": {
     "leaflet": "^1.9.4",
